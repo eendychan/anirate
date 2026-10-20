@@ -27,13 +27,12 @@
     <header class="w-full bg-[#151F2E]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[#2A3A4E]/60 px-3 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div class="flex items-center gap-4">
-                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-80 transition flex items-center gap-1">
+                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-85 transition flex items-center gap-1">
                     Ani<span class="text-[#3DB4F2]">Rate</span>
                 </a>
                 <div class="hidden sm:flex items-center gap-3">
                     <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Главная</a>
                     <a href="../random/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Рандом</a>
-                    <a href="./" class="text-xs font-bold text-[#3DB4F2] transition">Оценка</a>
                 </div>
             </div>
 
@@ -51,14 +50,14 @@
     </header>
 
     <!-- Search Modal -->
-    <div id="search-modal" class="fixed inset-0 z-50 bg-[#0B1622]/80 backdrop-blur-md hidden flex flex-col items-center justify-start pt-12 sm:pt-16 px-4 transition-all">
+    <div id="search-modal" class="fixed inset-0 z-50 bg-[#0B1622]/80 backdrop-blur-md hidden flex flex-col items-center justify-start pt-12 sm:pt-16 px-4">
         <div class="max-w-2xl w-full bg-[#151F2E] rounded-2xl border border-[#2A3A4E] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div class="p-3 border-b border-[#2A3A4E] flex items-center gap-3 bg-[#0B1622]/40 shrink-0">
                 <span class="material-symbols-outlined text-[#3DB4F2] text-xl">search</span>
                 <input type="text" id="anime-search-input" placeholder="Введите название аниме или манги..." autocomplete="off"
                        class="bg-transparent border-none outline-none text-sm w-full text-white placeholder-[#9FADBD]/60">
                 <div id="search-loading" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-[#3DB4F2] border-t-transparent shrink-0"></div>
-                <button onclick="closeSearchModal()" class="w-8 h-8 rounded-xl bg-[#1E2C3D] hover:bg-[#2A3A4E] flex items-center justify-center text-[#9FADBD] transition shrink-0">
+                <button onclick="closeSearchModal()" class="w-8 h-8 rounded-xl bg-[#1E2C3D] hover:bg-[#2A3A4E] flex items-center justify-center text-[#9FADBD]">
                     <span class="material-symbols-outlined text-lg">close</span>
                 </button>
             </div>
@@ -76,7 +75,7 @@
         </div>
     </div>
 
-    <!-- Область оценивания строго по центру экрана (flex-1 + my-auto) -->
+    <!-- Область оценивания строго по центру экрана -->
     <main class="flex-1 w-full flex flex-col items-center justify-center p-4">
         <div id="rating-card" class="max-w-3xl w-full p-4 sm:p-5 bg-[#151F2E] rounded-2xl border border-[#2A3A4E] shadow-2xl">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
@@ -100,6 +99,17 @@
                             <span id="anime-source" class="font-bold text-white">—</span>
                         </div>
                         <div id="anime-genres" class="flex flex-wrap justify-center md:justify-start gap-1 pt-0.5"></div>
+                        
+                        <!-- Возвращенный блок «Связанное» -->
+                        <div class="pt-2 border-t border-[#2A3A4E]/50 w-full">
+                            <div class="flex items-center justify-between text-[#9FADBD] mb-1.5">
+                                <span class="text-[10px] font-bold tracking-wider">Связанное</span>
+                            </div>
+                            <div id="anime-relations" class="flex gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar drag-grab select-none"></div>
+                            <div class="mt-1 flex items-center justify-center min-h-[20px]">
+                                <p id="relation-hover-title" class="text-[11px] font-bold text-[#3DB4F2] truncate w-full leading-tight text-center hidden"></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -131,7 +141,6 @@
                                 </div>
                                 <input type="range" id="slider-visuals" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
                             </div>
-                            <!-- Переименовано в "Звучок" -->
                             <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">music_note</span>Звучок</span>
@@ -149,7 +158,6 @@
                         </div>
                     </div>
 
-                    <!-- Сильная сторона: переименован пункт "Стиль" в "Звучок" -->
                     <div class="space-y-1.5">
                         <div class="flex items-center gap-1 text-[#9FADBD]">
                             <span class="material-symbols-outlined text-xs text-[#3DB4F2]">military_tech</span>
@@ -218,6 +226,7 @@
         window.onload = function() {
             initCommon();
             setStrongPoint('Содержание');
+            setupDragScroll();
             setup3DCardTilt();
             updateSliders();
         };
