@@ -11,14 +11,13 @@ let currentDrawerTab = 'ANIME';
 let anilistUser = null;
 let userMediaList = {};
 
-// Укажите ваш Client ID для работы AniList OAuth
+// Вставьте сюда ваш Client ID из настроек разработчика AniList
 const ANILIST_CLIENT_ID = '54503';
 
 function initCommon() {
     updateSavedCount();
     checkAuthAndInitUser();
 
-    // Загрузка сохраненной темы
     if (localStorage.getItem('anirate_theme') === 'light') {
         document.body.classList.add('light-theme');
     }
@@ -52,7 +51,6 @@ function initCommon() {
     }
 }
 
-// Меню переполнения (Тема / Язык)
 function toggleOverflowMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('overflow-menu');
@@ -69,74 +67,77 @@ function toggleLanguage() {
     showToast('Переключение языков (RU/EN)');
 }
 
-// Авторизация AniList с сессионным сохранением
+// Авторизация
 function loginAniList() {
-    window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&response_type=token`;
+    const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+    window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token`;
 }
 
 async function checkAuthAndInitUser() {
+    // 1. Проверяем наличие токена в хэше URL после редиректа от AniList
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
-    const token = params.get('access_token');
+    const tokenFromUrl = params.get('access_token');
     
-    if (token) {
-        localStorage.setItem('anilist_token', token);
-        sessionStorage.setItem('anilist_token', token);
-        window.location.hash = '';
+    if (tokenFromUrl) {
+        localStorage.setItem('anilist_token', tokenFromUrl);
+        // Очищаем URL от хэша без перезагрузки
+        history.replaceState(null, "", window.location.pathname + window.location.search);
     }
 
-    const savedToken = localStorage.getItem('anilist_token') || sessionStorage.getItem('anilist_token');
-    if (!savedToken) return;
+    const token = localStorage.getItem('anilist_token');
+    if (!token) return;
 
-    // Проверяем кеш в sessionStorage для мгновенного отображения сессии
-    const cachedUser = sessionStorage.getItem('anilist_viewer_cache');
+    // 2. Проверяем локальный кэш пользователя для моментального отображения
+    const cachedUser = localStorage.getItem('anilist_user_cache');
     if (cachedUser) {
         try {
             anilistUser = JSON.parse(cachedUser);
             renderUserWidget(anilistUser);
-            // Подтягиваем списки аниме/манги в фоне
-            fetchUserMediaList(anilistUser.name);
-            return;
         } catch(e) {}
     }
 
+    // 3. Запрашиваем свежие данные профиля Viewer с AniList
     try {
         const query = `
         query {
           Viewer {
-            id name avatar { large }
-            options { scoringSystem }
+            id
+            name
+            avatar { large }
             mediaListOptions { scoreFormat }
             statistics {
               anime { count episodesWatched meanScore }
               manga { count chaptersRead meanScore }
             }
-            genres(sort: COUNT_DESC) { genre }
           }
         }
         `;
         const res = await fetch('https://graphql.anilist.co', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + savedToken },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
             body: JSON.stringify({ query })
         });
+        
         const data = await res.json();
+        
         if (data.data && data.data.Viewer) {
             anilistUser = data.data.Viewer;
-            sessionStorage.setItem('anilist_viewer_cache', JSON.stringify(anilistUser));
+            localStorage.setItem('anilist_user_cache', JSON.stringify(anilistUser));
             renderUserWidget(anilistUser);
-            await fetchUserMediaList(anilistUser.name);
-        } else {
-            localStorage.removeItem('anilist_token');
-            sessionStorage.removeItem('anilist_token');
+            await fetchUserMediaList(anilistUser.name, token);
+        } else if (data.errors) {
+            console.error("AniList API Error:", data.errors);
         }
     } catch (err) {
-        console.error("AniList Auth Error:", err);
+        console.error("AniList Auth Network Error:", err);
     }
 }
 
-async function fetchUserMediaList(username) {
-    const token = localStorage.getItem('anilist_token') || sessionStorage.getItem('anilist_token');
+async function fetchUserMediaList(username, token) {
     const query = `
     query ($userName: String) {
       animeList: MediaListCollection(userName: $userName, type: ANIME) {
@@ -150,6 +151,8 @@ async function fetchUserMediaList(username) {
               title { english romaji }
               coverImage { medium large }
               format
+              episodes
+              seasonYear
             }
           }
         }
@@ -165,6 +168,7 @@ async function fetchUserMediaList(username) {
               title { english romaji }
               coverImage { medium large }
               format
+              chapters
             }
           }
         }
@@ -174,13 +178,17 @@ async function fetchUserMediaList(username) {
     try {
         const res = await fetch('https://graphql.anilist.co', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token 
+            },
             body: JSON.stringify({ query, variables: { userName: username } })
         });
         const data = await res.json();
         if (data.data) {
             userMediaList = {};
             const allEntries = [];
+            
             if (data.data.animeList && data.data.animeList.lists) {
                 data.data.animeList.lists.forEach(l => {
                     l.entries.forEach(e => {
@@ -197,7 +205,7 @@ async function fetchUserMediaList(username) {
                     });
                 });
             }
-            sessionStorage.setItem('anirate_user_media_entries', JSON.stringify(allEntries));
+            localStorage.setItem('anilist_media_entries', JSON.stringify(allEntries));
             renderSavedList();
         }
     } catch (err) {
@@ -209,14 +217,13 @@ function renderUserWidget(user) {
     const container = document.getElementById('auth-container');
     if (!container) return;
     container.innerHTML = `
-        <button onclick="openProfileModal('${user.name}')" class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[#1E2C3D] border border-[#2A3A4E] hover:border-[#3DB4F2] transition">
+        <button onclick="openProfileModal('${user.name}')" class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[#1E2C3D] border border-[#2A3A4E] hover:border-[#3DB4F2] transition cursor-pointer">
             <img src="${user.avatar.large}" class="w-6 h-6 rounded-full object-cover">
             <span class="text-xs font-bold text-white">${user.name}</span>
         </button>
     `;
 }
 
-// Модальное окно профиля
 async function openProfileModal(username) {
     const modal = document.getElementById('profile-modal');
     if (modal) modal.classList.remove('hidden');
@@ -241,14 +248,14 @@ async function loadUserProfileData(username) {
     const query = `
     query ($search: String) {
       User(name: $search) {
-        name about avatar { large }
-        options { scoringSystem }
+        name
+        about
+        avatar { large }
         mediaListOptions { scoreFormat }
         statistics {
           anime { count episodesWatched meanScore }
           manga { count chaptersRead meanScore }
         }
-        genres(sort: COUNT_DESC) { genre }
       }
     }
     `;
@@ -272,8 +279,8 @@ async function loadUserProfileData(username) {
 function renderUserProfile(user) {
     const content = document.getElementById('profile-modal-content');
     if (!content) return;
-    let anirateCount = savedRatings.length;
-    let anilistCount = Object.keys(userMediaList).length;
+    const anirateCount = savedRatings.length;
+    const anilistCount = Object.keys(userMediaList).length;
 
     content.innerHTML = `
         <div class="flex items-center gap-4 border-b border-[#2A3A4E] pb-4">
@@ -314,7 +321,6 @@ function renderUserProfile(user) {
     `;
 }
 
-// Конвертация оценки под систему AniList пользователя
 function formatScoreBySystem(score90, scoreFormat) {
     const ratio = score90 / 90;
     if (!scoreFormat || scoreFormat === 'POINT_100') return Math.round(ratio * 100) + ' / 100';
@@ -328,7 +334,6 @@ function formatScoreBySystem(score90, scoreFormat) {
     return score90 + ' / 90';
 }
 
-// Рандомайзер
 function setRandomMediaType(type) {
     randomMediaType = type;
     const btnAnime = document.getElementById('rand-type-anime');
@@ -414,8 +419,7 @@ function renderRandomResults(list) {
             </div>
         `;
         card.querySelector('button').onclick = () => {
-            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
-            window.location.href = '../rate/';
+            goToRateMedia(item);
         };
         grid.appendChild(card);
     });
@@ -426,7 +430,6 @@ function renderRandomResults(list) {
     }
 }
 
-// Стандартные функции поиска и каталога
 function openSearchModal() {
     const modal = document.getElementById('search-modal');
     if (modal) modal.classList.remove('hidden');
@@ -548,7 +551,9 @@ function createSearchItemNode(media) {
 
 function goToRateMedia(media) {
     sessionStorage.setItem('selected_anime_temp', JSON.stringify(media));
-    const basePath = window.location.pathname.includes('/rate/') ? './' : (window.location.pathname.includes('/random/') ? '../rate/' : './rate/');
+    const isRatePage = window.location.pathname.includes('/rate/');
+    const isRandomPage = window.location.pathname.includes('/random/');
+    const basePath = isRatePage ? './' : (isRandomPage ? '../rate/' : './rate/');
     window.location.href = basePath;
 }
 
@@ -813,9 +818,8 @@ function updateSliders() {
 
     const convertedEl = document.getElementById('anilist-converted-score');
     if (convertedEl) {
-        const scoringSys = (anilistUser && anilistUser.options && anilistUser.options.scoringSystem) || 
-                           (anilistUser && anilistUser.mediaListOptions && anilistUser.mediaListOptions.scoreFormat) || 'POINT_100';
-        const formatted = formatScoreBySystem(score90, scoringSys);
+        const scoreFormat = (anilistUser && anilistUser.mediaListOptions && anilistUser.mediaListOptions.scoreFormat) || 'POINT_100';
+        const formatted = formatScoreBySystem(score90, scoreFormat);
         convertedEl.innerText = `AniList: ${formatted}`;
         convertedEl.classList.remove('hidden');
     }
@@ -900,15 +904,17 @@ function switchDrawerTab(type) {
     renderSavedList();
 }
 
-// Рендер Списка (с корректной проверкой оценок AniRate и AniList)
+// Отображение списка
 function renderSavedList() {
     const container = document.getElementById('saved-list-container');
     if (!container) return;
     container.innerHTML = '';
 
+    let rawEntries = localStorage.getItem('anilist_media_entries');
     let itemsToRender = [];
-    if (anilistUser && sessionStorage.getItem('anirate_user_media_entries')) {
-        const allEntries = JSON.parse(sessionStorage.getItem('anirate_user_media_entries') || '[]');
+
+    if (anilistUser && rawEntries) {
+        const allEntries = JSON.parse(rawEntries || '[]');
         itemsToRender = allEntries.filter(e => e.type === currentDrawerTab);
     } else {
         itemsToRender = savedRatings.filter(r => (r.type || 'ANIME') === currentDrawerTab).map(r => ({
@@ -931,13 +937,12 @@ function renderSavedList() {
         const mediaId = media.id;
 
         const anirateMatch = savedRatings.find(r => r.id === mediaId && r.type === entry.type);
-        const scoringSys = (anilistUser && anilistUser.options && anilistUser.options.scoringSystem) || 
-                           (anilistUser && anilistUser.mediaListOptions && anilistUser.mediaListOptions.scoreFormat) || 'POINT_100';
+        const scoreFormat = (anilistUser && anilistUser.mediaListOptions && anilistUser.mediaListOptions.scoreFormat) || 'POINT_100';
 
         let scoreHtml = '';
         if (anirateMatch) {
-            // Оценен в AniRate: показываем оценку AniRate и оценку AniList
-            const anilistScoreFormatted = entry.score > 0 ? formatScoreBySystem(entry.score * 10, scoringSys) : 'Нет';
+            // Оценено в AniRate: показываем оценки AniRate и AniList
+            const anilistScoreFormatted = entry.score > 0 ? formatScoreBySystem(entry.score * 10, scoreFormat) : 'Нет';
             scoreHtml = `
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="font-rubik-black text-xs text-[#3DB4F2]">AniRate: ${anirateMatch.score90} / 90</span>
@@ -945,12 +950,13 @@ function renderSavedList() {
                 </div>
             `;
         } else {
-            // НЕ оценен в AniRate (оценка только AniList): вместо оценки AniRate показываем кнопку «Оценить»
-            const anilistScoreFormatted = entry.score > 0 ? formatScoreBySystem(entry.score * 10, scoringSys) : 'Нет оценки';
+            // Только AniList (в AniRate еще не оценивали): показываем балл AniList и кнопку «Оценить»
+            const anilistScoreFormatted = entry.score > 0 ? formatScoreBySystem(entry.score * 10, scoreFormat) : 'Без оценки';
+            
             scoreHtml = `
-                <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[10px] text-[#9FADBD]">AniList: ${anilistScoreFormatted}</span>
-                    <button onclick='goToRateMedia(${JSON.stringify(media).replace(/'/g, "&apos;")})' class="px-2 py-0.5 rounded bg-[#3DB4F2]/20 text-[#3DB4F2] text-[9px] font-bold hover:bg-[#3DB4F2]/30 transition">Оценить</button>
+                <div class="flex items-center justify-between gap-2 w-full mt-1">
+                    <span class="text-[10px] text-[#9FADBD]">AniList: <strong class="text-white">${anilistScoreFormatted}</strong></span>
+                    <button id="btn-rate-${mediaId}" class="px-2.5 py-1 rounded-lg bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-bold text-[10px] transition cursor-pointer">Оценить</button>
                 </div>
             `;
         }
@@ -961,12 +967,17 @@ function renderSavedList() {
             <img src="${cover}" class="w-9 h-12 object-cover rounded shrink-0">
             <div class="flex-1 min-w-0">
                 <h4 class="text-xs font-bold text-white truncate">${title}</h4>
-                <div class="mt-0.5">
-                    ${scoreHtml}
-                </div>
+                ${scoreHtml}
             </div>
         `;
+
         container.appendChild(div);
+
+        // Навешиваем событие клика на кнопку «Оценить»
+        const rateBtn = div.querySelector(`#btn-rate-${mediaId}`);
+        if (rateBtn) {
+            rateBtn.onclick = () => goToRateMedia(media);
+        }
     });
 }
 
@@ -1003,7 +1014,6 @@ function showToast(message) {
     }, 2200);
 }
 
-// Загрузка контента главной страницы
 async function loadHomePageContent() {
     const seasonObj = getCurrentSeasonObj();
     const query = `
