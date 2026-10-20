@@ -4,33 +4,14 @@ body {
     background-color: #0B1622;
     color: #EDF1F5;
 }
-body.light-theme {
-    background-color: #F4F6F9;
-    color: #111827;
-}
-body.light-theme header,
-body.light-theme .bg-\[\#151F2E\],
-body.light-theme #search-modal > div,
-body.light-theme #saved-drawer > div,
-body.light-theme #profile-modal > div {
-    background-color: #FFFFFF !important;
-    color: #111827 !important;
-    border-color: #D1D5DB !important;
-}
-body.light-theme .bg-\[\#0B1622\],
-body.light-theme .bg-\[\#0B1622\]\/60,
-body.light-theme .bg-\[\#1E2C3D\] {
-    background-color: #F9FAFB !important;
-    border-color: #E5E7EB !important;
-    color: #374151 !important;
-}
 .font-rubik-black {
     font-family: 'Rubik', sans-serif;
     font-weight: 900;
 }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-track { background: #0B1622; }
 ::-webkit-scrollbar-thumb { background: #2A3A4E; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #3DB4F2; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .drag-grab { cursor: grab; }
@@ -69,6 +50,7 @@ body.light-theme .bg-\[\#1E2C3D\] {
     will-change: transform;
 }
 
+/* Реалистичная книжная обложка манги с выглядывающими страницами */
 .manga-book-container {
     perspective: 1200px;
     position: relative;
