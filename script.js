@@ -69,9 +69,8 @@ function toggleLanguage() {
     showToast('Переключение языков (RU/EN)');
 }
 
-// Авторизация AniList (Implicit Grant)
+// Авторизация AniList с сессионным сохранением
 function loginAniList() {
-    const redirectUri = window.location.origin + window.location.pathname;
     window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&response_type=token`;
 }
 
@@ -79,19 +78,34 @@ async function checkAuthAndInitUser() {
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const token = params.get('access_token');
+    
     if (token) {
         localStorage.setItem('anilist_token', token);
+        sessionStorage.setItem('anilist_token', token);
         window.location.hash = '';
     }
 
-    const savedToken = localStorage.getItem('anilist_token');
+    const savedToken = localStorage.getItem('anilist_token') || sessionStorage.getItem('anilist_token');
     if (!savedToken) return;
+
+    // Проверяем кеш в sessionStorage для мгновенного отображения сессии
+    const cachedUser = sessionStorage.getItem('anilist_viewer_cache');
+    if (cachedUser) {
+        try {
+            anilistUser = JSON.parse(cachedUser);
+            renderUserWidget(anilistUser);
+            // Подтягиваем списки аниме/манги в фоне
+            fetchUserMediaList(anilistUser.name);
+            return;
+        } catch(e) {}
+    }
 
     try {
         const query = `
         query {
           Viewer {
             id name avatar { large }
+            options { scoringSystem }
             mediaListOptions { scoreFormat }
             statistics {
               anime { count episodesWatched meanScore }
@@ -109,8 +123,12 @@ async function checkAuthAndInitUser() {
         const data = await res.json();
         if (data.data && data.data.Viewer) {
             anilistUser = data.data.Viewer;
+            sessionStorage.setItem('anilist_viewer_cache', JSON.stringify(anilistUser));
             renderUserWidget(anilistUser);
             await fetchUserMediaList(anilistUser.name);
+        } else {
+            localStorage.removeItem('anilist_token');
+            sessionStorage.removeItem('anilist_token');
         }
     } catch (err) {
         console.error("AniList Auth Error:", err);
@@ -118,14 +136,38 @@ async function checkAuthAndInitUser() {
 }
 
 async function fetchUserMediaList(username) {
-    const token = localStorage.getItem('anilist_token');
+    const token = localStorage.getItem('anilist_token') || sessionStorage.getItem('anilist_token');
     const query = `
     query ($userName: String) {
-      MediaListCollection(userName: $userName, type: ANIME) {
-        lists { entries { mediaId score status } }
+      animeList: MediaListCollection(userName: $userName, type: ANIME) {
+        lists {
+          entries {
+            score
+            status
+            media {
+              id
+              type
+              title { english romaji }
+              coverImage { medium large }
+              format
+            }
+          }
+        }
       }
       mangaList: MediaListCollection(userName: $userName, type: MANGA) {
-        lists { entries { mediaId score status } }
+        lists {
+          entries {
+            score
+            status
+            media {
+              id
+              type
+              title { english romaji }
+              coverImage { medium large }
+              format
+            }
+          }
+        }
       }
     }
     `;
@@ -138,16 +180,25 @@ async function fetchUserMediaList(username) {
         const data = await res.json();
         if (data.data) {
             userMediaList = {};
-            if (data.data.MediaListCollection && data.data.MediaListCollection.lists) {
-                data.data.MediaListCollection.lists.forEach(l => {
-                    l.entries.forEach(e => { userMediaList[e.mediaId] = { score: e.score, status: e.status }; });
+            const allEntries = [];
+            if (data.data.animeList && data.data.animeList.lists) {
+                data.data.animeList.lists.forEach(l => {
+                    l.entries.forEach(e => {
+                        userMediaList[e.media.id] = { score: e.score, status: e.status, media: e.media, type: 'ANIME' };
+                        allEntries.push({ ...e, type: 'ANIME' });
+                    });
                 });
             }
             if (data.data.mangaList && data.data.mangaList.lists) {
                 data.data.mangaList.lists.forEach(l => {
-                    l.entries.forEach(e => { userMediaList[e.mediaId] = { score: e.score, status: e.status }; });
+                    l.entries.forEach(e => {
+                        userMediaList[e.media.id] = { score: e.score, status: e.status, media: e.media, type: 'MANGA' };
+                        allEntries.push({ ...e, type: 'MANGA' });
+                    });
                 });
             }
+            sessionStorage.setItem('anirate_user_media_entries', JSON.stringify(allEntries));
+            renderSavedList();
         }
     } catch (err) {
         console.error("Error fetching media list:", err);
@@ -191,6 +242,7 @@ async function loadUserProfileData(username) {
     query ($search: String) {
       User(name: $search) {
         name about avatar { large }
+        options { scoringSystem }
         mediaListOptions { scoreFormat }
         statistics {
           anime { count episodesWatched meanScore }
@@ -481,9 +533,7 @@ function createSearchItemNode(media) {
     item.className = 'flex items-center gap-3 p-2 rounded-xl hover:bg-[#1E2C3D] cursor-pointer transition';
     item.onclick = () => {
         closeSearchModal();
-        sessionStorage.setItem('selected_anime_temp', JSON.stringify(media));
-        const basePath = window.location.pathname.includes('/rate/') ? './' : (window.location.pathname.includes('/random/') ? '../rate/' : './rate/');
-        window.location.href = basePath;
+        goToRateMedia(media);
     };
 
     item.innerHTML = `
@@ -494,6 +544,12 @@ function createSearchItemNode(media) {
         </div>
     `;
     return item;
+}
+
+function goToRateMedia(media) {
+    sessionStorage.setItem('selected_anime_temp', JSON.stringify(media));
+    const basePath = window.location.pathname.includes('/rate/') ? './' : (window.location.pathname.includes('/random/') ? '../rate/' : './rate/');
+    window.location.href = basePath;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -757,8 +813,9 @@ function updateSliders() {
 
     const convertedEl = document.getElementById('anilist-converted-score');
     if (convertedEl) {
-        const scoreFormat = anilistUser && anilistUser.mediaListOptions ? anilistUser.mediaListOptions.scoreFormat : 'POINT_100';
-        const formatted = formatScoreBySystem(score90, scoreFormat);
+        const scoringSys = (anilistUser && anilistUser.options && anilistUser.options.scoringSystem) || 
+                           (anilistUser && anilistUser.mediaListOptions && anilistUser.mediaListOptions.scoreFormat) || 'POINT_100';
+        const formatted = formatScoreBySystem(score90, scoringSys);
         convertedEl.innerText = `AniList: ${formatted}`;
         convertedEl.classList.remove('hidden');
     }
@@ -843,52 +900,74 @@ function switchDrawerTab(type) {
     renderSavedList();
 }
 
+// Рендер Списка (с корректной проверкой оценок AniRate и AniList)
 function renderSavedList() {
     const container = document.getElementById('saved-list-container');
     if (!container) return;
     container.innerHTML = '';
-    const filtered = savedRatings.filter(r => (r.type || 'ANIME') === currentDrawerTab);
-    if (filtered.length === 0) { container.innerHTML = `<div class="text-center py-10 text-[#9FADBD] text-xs">Список пуст</div>`; return; }
 
-    filtered.forEach((item) => {
-        const originalIndex = savedRatings.indexOf(item);
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-2.5 p-2 bg-[#0B1622]/60 rounded-xl border border-[#2A3A4E]';
-        
-        let scoreDisplay = `<span class="font-rubik-black text-xs text-[#3DB4F2]">${item.score90} / 90</span>`;
-        if (userMediaList[item.id]) {
-            const sys = anilistUser && anilistUser.mediaListOptions ? anilistUser.mediaListOptions.scoreFormat : 'POINT_100';
-            scoreDisplay += ` <span class="text-[10px] text-[#9FADBD]">| AL: ${formatScoreBySystem(userMediaList[item.id].score * 10, sys)}</span>`;
+    let itemsToRender = [];
+    if (anilistUser && sessionStorage.getItem('anirate_user_media_entries')) {
+        const allEntries = JSON.parse(sessionStorage.getItem('anirate_user_media_entries') || '[]');
+        itemsToRender = allEntries.filter(e => e.type === currentDrawerTab);
+    } else {
+        itemsToRender = savedRatings.filter(r => (r.type || 'ANIME') === currentDrawerTab).map(r => ({
+            media: { id: r.id, title: { english: r.title, romaji: r.title }, coverImage: { medium: r.cover }, type: r.type },
+            score: 0,
+            type: r.type
+        }));
+    }
+
+    if (itemsToRender.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-[#9FADBD] text-xs">Список пуст</div>`;
+        return;
+    }
+
+    itemsToRender.forEach((entry) => {
+        const media = entry.media;
+        if (!media) return;
+        const title = media.title.english || media.title.romaji || 'Media';
+        const cover = media.coverImage.medium || media.coverImage.large || '';
+        const mediaId = media.id;
+
+        const anirateMatch = savedRatings.find(r => r.id === mediaId && r.type === entry.type);
+        const scoringSys = (anilistUser && anilistUser.options && anilistUser.options.scoringSystem) || 
+                           (anilistUser && anilistUser.mediaListOptions && anilistUser.mediaListOptions.scoreFormat) || 'POINT_100';
+
+        let scoreHtml = '';
+        if (anirateMatch) {
+            // Оценен в AniRate: показываем оценку AniRate и оценку AniList
+            const anilistScoreFormatted = entry.score > 0 ? formatScoreBySystem(entry.score * 10, scoringSys) : 'Нет';
+            scoreHtml = `
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-rubik-black text-xs text-[#3DB4F2]">AniRate: ${anirateMatch.score90} / 90</span>
+                    <span class="text-[10px] text-[#9FADBD]">| AniList: ${anilistScoreFormatted}</span>
+                </div>
+            `;
         } else {
-            scoreDisplay += ` <button onclick="rateOnAniList(${item.id})" class="ml-2 px-2 py-0.5 rounded bg-[#3DB4F2]/20 text-[#3DB4F2] text-[9px] font-bold">Оценить</button>`;
+            // НЕ оценен в AniRate (оценка только AniList): вместо оценки AniRate показываем кнопку «Оценить»
+            const anilistScoreFormatted = entry.score > 0 ? formatScoreBySystem(entry.score * 10, scoringSys) : 'Нет оценки';
+            scoreHtml = `
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[10px] text-[#9FADBD]">AniList: ${anilistScoreFormatted}</span>
+                    <button onclick='goToRateMedia(${JSON.stringify(media).replace(/'/g, "&apos;")})' class="px-2 py-0.5 rounded bg-[#3DB4F2]/20 text-[#3DB4F2] text-[9px] font-bold hover:bg-[#3DB4F2]/30 transition">Оценить</button>
+                </div>
+            `;
         }
 
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2.5 p-2 bg-[#0B1622]/60 rounded-xl border border-[#2A3A4E]';
         div.innerHTML = `
-            <img src="${item.cover}" class="w-9 h-12 object-cover rounded shrink-0">
+            <img src="${cover}" class="w-9 h-12 object-cover rounded shrink-0">
             <div class="flex-1 min-w-0">
-                <h4 class="text-xs font-bold text-white truncate">${item.title}</h4>
-                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    ${scoreDisplay}
+                <h4 class="text-xs font-bold text-white truncate">${title}</h4>
+                <div class="mt-0.5">
+                    ${scoreHtml}
                 </div>
             </div>
-            <button onclick="removeSavedRating(${originalIndex})" class="w-7 h-7 rounded-lg hover:bg-red-500/20 text-[#9FADBD] flex items-center justify-center">
-                <span class="material-symbols-outlined text-base">delete</span>
-            </button>
         `;
         container.appendChild(div);
     });
-}
-
-function rateOnAniList(mediaId) {
-    window.open(`https://anilist.co/anime/${mediaId}`, '_blank');
-}
-
-function removeSavedRating(index) {
-    savedRatings.splice(index, 1);
-    localStorage.setItem('anirate_saved_ratings', JSON.stringify(savedRatings));
-    updateSavedCount();
-    renderSavedList();
-    showToast('Удалено');
 }
 
 function clearAllRatings() {
@@ -1042,8 +1121,7 @@ function renderHeroSlide(idx, seasonName) {
         const rateBtn = document.getElementById('hero-rate-btn');
         if (rateBtn) {
             rateBtn.onclick = () => {
-                sessionStorage.setItem('selected_anime_temp', JSON.stringify(anime));
-                window.location.href = './rate/';
+                goToRateMedia(anime);
             };
         }
         bgLayer.classList.remove('hero-slide-fade-out');
@@ -1075,9 +1153,7 @@ function renderCardsGrid(containerId, list, isManga = false) {
         const card = document.createElement('div');
         card.className = 'bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-[#3DB4F2] transition group cursor-pointer shadow-md flex flex-col justify-between';
         card.onclick = () => {
-            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
-            const basePath = window.location.pathname.includes('/rate/') ? './' : (window.location.pathname.includes('/random/') ? '../rate/' : './rate/');
-            window.location.href = basePath;
+            goToRateMedia(item);
         };
 
         const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1 my-1' : 'relative overflow-hidden aspect-[3/4]';
@@ -1105,9 +1181,7 @@ function renderHentaiGrid(containerId, list, isManga = false) {
         const card = document.createElement('div');
         card.className = 'nsfw-card bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-rose-500/80 transition group cursor-pointer shadow-md relative';
         card.onclick = () => {
-            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
-            const basePath = window.location.pathname.includes('/rate/') ? './' : (window.location.pathname.includes('/random/') ? '../rate/' : './rate/');
-            window.location.href = basePath;
+            goToRateMedia(item);
         };
 
         const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1 my-1' : 'relative overflow-hidden aspect-[3/4]';
