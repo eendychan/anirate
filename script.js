@@ -12,7 +12,7 @@ let anilistUser = null;
 let userMediaList = {};
 
 // Укажите ваш Client ID для работы AniList OAuth
-const ANILIST_CLIENT_ID = 'YOUR_CLIENT_ID';
+const ANILIST_CLIENT_ID = '54503';
 
 function initCommon() {
     updateSavedCount();
