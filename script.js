@@ -48,8 +48,9 @@ function closeSearchModal() {
 }
 
 function openCoverModal() {
-    if (!currentAnime) return;
+    if (!currentAnime || !currentAnime.coverImage) return;
     const cover = currentAnime.coverImage.extraLarge || currentAnime.coverImage.large || currentAnime.coverImage.medium;
+    if (!cover) return;
     document.getElementById('cover-modal-img').src = cover;
     document.getElementById('cover-modal').classList.remove('hidden');
 }
@@ -158,8 +159,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function selectAnime(anime) {
     currentAnime = anime;
-    const title = anime.title.english || anime.title.romaji || anime.title.native;
-    const cover = anime.coverImage.extraLarge || anime.coverImage.large || anime.coverImage.medium;
+    const title = anime.title.english || anime.title.romaji || anime.title.native || 'Тайтл';
+    const cover = (anime.coverImage && (anime.coverImage.extraLarge || anime.coverImage.large || anime.coverImage.medium)) || 'https://placehold.co/150x200/151F2E/9FADBD?text=Нет+обложки';
 
     const elTitle = document.getElementById('anime-title');
     if (elTitle) elTitle.innerText = title;
@@ -194,7 +195,106 @@ function selectAnime(anime) {
         }
     }
 
+    renderCriteriaForMediaType(anime.type || 'ANIME');
     renderRelations(anime.relations);
+}
+
+function renderCriteriaForMediaType(type) {
+    const criteriaContainer = document.getElementById('criteria-container');
+    const strongChipsContainer = document.getElementById('strong-point-chips');
+    if (!criteriaContainer || !strongChipsContainer) return;
+
+    criteriaContainer.innerHTML = '';
+    strongChipsContainer.innerHTML = '';
+
+    if (type === 'MANGA') {
+        const mangaCriteria = [
+            { key: 'content', label: 'Содержание', icon: 'auto_stories', desc: 'Оценка сюжета, повествования и/или темпа' },
+            { key: 'characters', label: 'Персонажи', icon: 'group', desc: 'Оценка проработки, развития и/или химии' },
+            { key: 'visuals', label: 'Рисовка', icon: 'palette', desc: 'стиль, детализация, читаемость кадров и/или погружение' },
+            { key: 'composition', label: 'Композиция', icon: 'view_kanban', desc: 'Построение страницы, ритм, работа с пространством и/или переходами' },
+            { key: 'audio', label: 'Текст', icon: 'chat', desc: 'диалоги, нарративные вставки' },
+            { key: 'aftertaste', label: 'Послевкусие', icon: 'psychology', desc: 'Насколько зацепило, эмоции и/или хочется ли вернуться?' }
+        ];
+
+        mangaCriteria.forEach(c => {
+            const div = document.createElement('div');
+            const isFull = c.key === 'aftertaste';
+            div.className = `bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative ${isFull ? 'sm:col-span-2' : ''}`;
+            div.title = c.desc;
+            div.innerHTML = `
+                <div class="flex justify-between items-center text-xs font-bold">
+                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">${c.icon}</span>${c.label}</span>
+                    <span id="val-${c.key}" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
+                </div>
+                <input type="range" id="slider-${c.key}" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                <p class="text-[9px] text-[#9FADBD] italic">${c.desc}</p>
+            `;
+            criteriaContainer.appendChild(div);
+        });
+
+        const strongPoints = ['Содержание', 'Персонажи', 'Рисовка', 'Композиция', 'Текст'];
+        strongPoints.forEach(sp => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.onclick = () => setStrongPoint(sp, btn);
+            btn.className = 'bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center';
+            btn.setAttribute('data-key', sp);
+            btn.innerText = sp;
+            strongChipsContainer.appendChild(btn);
+        });
+
+    } else {
+        const animeCriteria = [
+            { key: 'content', label: 'Содержание', icon: 'auto_stories', desc: 'Оценка сюжета, повествования и/или темпа' },
+            { key: 'characters', label: 'Персонажи', icon: 'group', desc: 'Оценка проработки, развития и/или химии' },
+            { key: 'visuals', label: 'Визуал', icon: 'palette', desc: 'Оценка рисовки, анимации и/или стиля' },
+            { key: 'audio', label: 'Звучок', icon: 'music_note', desc: 'Оценка музыки и OST (по желанию и озвучки)' }
+        ];
+
+        animeCriteria.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative';
+            div.title = c.desc;
+            div.innerHTML = `
+                <div class="flex justify-between items-center text-xs font-bold">
+                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">${c.icon}</span>${c.label}</span>
+                    <span id="val-${c.key}" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
+                </div>
+                <input type="range" id="slider-${c.key}" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                <p class="text-[9px] text-[#9FADBD] italic">${c.desc}</p>
+            `;
+            criteriaContainer.appendChild(div);
+        });
+
+        // Послевкусие для аниме
+        const afterDiv = document.createElement('div');
+        afterDiv.className = 'bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative sm:col-span-2';
+        afterDiv.title = 'Насколько зацепило, вызвало ли эмоции и/или хочется ли вернуться?';
+        afterDiv.innerHTML = `
+            <div class="flex justify-between items-center text-xs font-bold">
+                <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">psychology</span>Послевкусие</span>
+                <span id="val-aftertaste" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
+            </div>
+            <input type="range" id="slider-aftertaste" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+            <p class="text-[9px] text-[#9FADBD] italic">Насколько зацепило, эмоции и/или хочется ли вернуться?</p>
+        `;
+        criteriaContainer.appendChild(afterDiv);
+
+        const strongPoints = ['Содержание', 'Персонажи', 'Визуал', 'Звучок'];
+        strongPoints.forEach(sp => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.onclick = () => setStrongPoint(sp, btn);
+            btn.className = 'bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center';
+            btn.setAttribute('data-key', sp);
+            btn.innerText = sp;
+            strongChipsContainer.appendChild(btn);
+        });
+    }
+
+    setStrongPoint('Содержание');
+    updateSliders();
 }
 
 function renderRelations(relationsData) {
@@ -213,7 +313,7 @@ function renderRelations(relationsData) {
         if (!edge.node) return;
         const node = edge.node;
         const title = node.title.english || node.title.romaji;
-        const cover = node.coverImage.medium || node.coverImage.large;
+        const cover = (node.coverImage && (node.coverImage.medium || node.coverImage.large)) || '';
 
         const wrapper = document.createElement('div');
         wrapper.className = 'shrink-0 cursor-pointer group relative';
@@ -448,7 +548,7 @@ function renderCardsGrid(containerId, list, isManga = false) {
             window.location.href = basePath;
         };
 
-        const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1' : 'relative overflow-hidden aspect-[3/4]';
+        const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1 my-1' : 'relative overflow-hidden aspect-[3/4]';
         const coverInnerClass = isManga ? 'manga-book-cover w-full object-cover' : 'w-full h-full object-cover group-hover:scale-105 transition duration-300';
 
         card.innerHTML = `
@@ -477,7 +577,7 @@ function renderHentaiGrid(containerId, list, isManga = false) {
             window.location.href = './rate/';
         };
 
-        const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1' : 'relative overflow-hidden aspect-[3/4]';
+        const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1 my-1' : 'relative overflow-hidden aspect-[3/4]';
         const coverInnerClass = isManga ? 'manga-book-cover w-full object-cover' : 'w-full h-full object-cover';
 
         card.innerHTML = `
@@ -649,20 +749,26 @@ function renderRandomResults(list) {
 }
 
 function updateSliders() {
-    const cEl = document.getElementById('slider-content');
-    if (!cEl) return;
-    const c = parseInt(cEl.value);
-    const ch = parseInt(document.getElementById('slider-characters').value);
-    const v = parseInt(document.getElementById('slider-visuals').value);
-    const a = parseInt(document.getElementById('slider-audio').value);
-    const af = parseInt(document.getElementById('slider-aftertaste').value);
+    if (!currentAnime) return;
+    const isManga = currentAnime.type === 'MANGA';
 
-    document.getElementById('val-content').innerText = c;
-    document.getElementById('val-characters').innerText = ch;
-    document.getElementById('val-visuals').innerText = v;
-    document.getElementById('val-audio').innerText = a;
-    document.getElementById('val-aftertaste').innerText = af;
-    document.getElementById('score-90-value').innerText = Math.round(((c + ch + v + a + af) / 50) * 90);
+    const c = parseInt(document.getElementById('slider-content')?.value || 8);
+    const ch = parseInt(document.getElementById('slider-characters')?.value || 8);
+    const v = parseInt(document.getElementById('slider-visuals')?.value || 8);
+    const extra = parseInt(document.getElementById('slider-composition')?.value || document.getElementById('slider-audio')?.value || 8);
+    const af = parseInt(document.getElementById('slider-aftertaste')?.value || 8);
+
+    if (document.getElementById('val-content')) document.getElementById('val-content').innerText = c;
+    if (document.getElementById('val-characters')) document.getElementById('val-characters').innerText = ch;
+    if (document.getElementById('val-visuals')) document.getElementById('val-visuals').innerText = v;
+    if (document.getElementById('val-composition')) document.getElementById('val-composition').innerText = extra;
+    if (document.getElementById('val-audio')) document.getElementById('val-audio').innerText = extra;
+    if (document.getElementById('val-aftertaste')) document.getElementById('val-aftertaste').innerText = af;
+
+    const sum = c + ch + v + extra + af;
+    const score90 = Math.round((sum / 50) * 90);
+    const scoreEl = document.getElementById('score-90-value');
+    if (scoreEl) scoreEl.innerText = score90;
 }
 
 function triggerBouncyAnimation(elem) {
@@ -688,19 +794,21 @@ function setStrongPoint(pointName, element) {
 
 function saveCurrentRating() {
     if (!currentAnime) { showToast('Сначала выберите тайтл через поиск!'); return; }
-    const c = parseInt(document.getElementById('slider-content').value);
-    const ch = parseInt(document.getElementById('slider-characters').value);
-    const v = parseInt(document.getElementById('slider-visuals').value);
-    const a = parseInt(document.getElementById('slider-audio').value);
-    const af = parseInt(document.getElementById('slider-aftertaste').value);
-    const sum = c + ch + v + a + af;
+    const isManga = currentAnime.type === 'MANGA';
+
+    const c = parseInt(document.getElementById('slider-content')?.value || 8);
+    const ch = parseInt(document.getElementById('slider-characters')?.value || 8);
+    const v = parseInt(document.getElementById('slider-visuals')?.value || 8);
+    const extra = parseInt(document.getElementById('slider-composition')?.value || document.getElementById('slider-audio')?.value || 8);
+    const af = parseInt(document.getElementById('slider-aftertaste')?.value || 8);
+    const sum = c + ch + v + extra + af;
 
     const ratingRecord = {
         id: currentAnime.id,
         type: currentAnime.type || 'ANIME',
         title: currentAnime.title.english || currentAnime.title.romaji || 'Media',
         cover: (currentAnime.coverImage && (currentAnime.coverImage.medium || currentAnime.coverImage.large)) || '',
-        sliders: { content: c, characters: ch, visuals: v, audio: a, aftertaste: af },
+        sliders: { content: c, characters: ch, visuals: v, extra: extra, aftertaste: af },
         strongPoint: selectedStrongPoint,
         score90: Math.round((sum / 50) * 90),
         date: new Date().toLocaleDateString()
