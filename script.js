@@ -254,9 +254,7 @@ async function fetchMediaById(id, type) {
         if (data.data && data.data.Media) {
             selectAnime(data.data.Media);
         }
-    } catch (err) {
-        console.error("Error fetching media by ID:", err);
-    }
+    } catch (err) { console.error("Error fetching media by ID:", err); }
 }
 
 function setupDragScroll() {
@@ -450,11 +448,14 @@ function renderCardsGrid(containerId, list, isManga = false) {
             window.location.href = basePath;
         };
 
+        const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1' : 'relative overflow-hidden aspect-[3/4]';
+        const coverInnerClass = isManga ? 'manga-book-cover w-full object-cover' : 'w-full h-full object-cover group-hover:scale-105 transition duration-300';
+
         card.innerHTML = `
-            <div class="relative overflow-hidden aspect-[3/4] ${isManga ? 'manga-book-cover' : ''}">
-                <img src="${item.coverImage.large || item.coverImage.medium}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            <div class="${coverWrapperClass}">
+                <img src="${item.coverImage.large || item.coverImage.medium}" class="${coverInnerClass}">
             </div>
-            <div class="p-2 space-y-1">
+            <div class="p-2 space-y-1 mt-1">
                 <h4 class="text-xs font-bold text-white truncate group-hover:text-[#3DB4F2]">${item.title.english || item.title.romaji}</h4>
                 <p class="text-[10px] text-[#9FADBD]">${isManga ? (item.chapters ? item.chapters + ' гл.' : 'Манга') : (item.seasonYear || '') + ' ' + (item.format || '')}</p>
             </div>
@@ -476,15 +477,18 @@ function renderHentaiGrid(containerId, list, isManga = false) {
             window.location.href = './rate/';
         };
 
+        const coverWrapperClass = isManga ? 'manga-book-container relative overflow-visible py-1 px-1' : 'relative overflow-hidden aspect-[3/4]';
+        const coverInnerClass = isManga ? 'manga-book-cover w-full object-cover' : 'w-full h-full object-cover';
+
         card.innerHTML = `
-            <div class="relative overflow-hidden aspect-[3/4]">
-                <img src="${item.coverImage.large}" class="w-full h-full object-cover">
-                <div class="nsfw-mask absolute inset-0 bg-[#0B1622]/80 flex flex-col items-center justify-center p-2 text-center z-20">
+            <div class="${coverWrapperClass}">
+                <img src="${item.coverImage.large}" class="${coverInnerClass}">
+                <div class="nsfw-mask absolute inset-0 bg-[#0B1622]/80 flex flex-col items-center justify-center p-2 text-center z-20 rounded-xl">
                     <span class="px-2 py-0.5 rounded bg-rose-600 text-white font-rubik-black text-[10px]">18+</span>
                     <span class="text-[9px] text-white/90 font-bold mt-1">Наведите для просмотра</span>
                 </div>
             </div>
-            <div class="p-2 space-y-1">
+            <div class="p-2 space-y-1 mt-1">
                 <h4 class="text-xs font-bold text-white truncate group-hover:text-rose-400">${item.title.english || item.title.romaji}</h4>
                 <p class="text-[10px] text-[#9FADBD]">18+</p>
             </div>
@@ -498,6 +502,9 @@ async function loadGenreAnime(genre, btnElem) {
         document.querySelectorAll('.genre-tab-btn').forEach(b => b.className = 'bouncy-chip genre-tab-btn px-3 py-1.5 rounded-xl bg-[#151F2E] border border-[#2A3A4E] text-[#9FADBD] text-xs font-bold shrink-0');
         btnElem.className = 'bouncy-chip genre-tab-btn px-3 py-1.5 rounded-xl bg-[#3DB4F2]/20 border border-[#3DB4F2] text-[#3DB4F2] text-xs font-bold shrink-0';
     }
+    const moreBtn = document.getElementById('genre-anime-more-btn');
+    if (moreBtn) moreBtn.href = `https://anilist.co/search/anime?genres=${genre}`;
+
     const query = `query ($genre: String) { Page(perPage: 6) { media(type: ANIME, genre: $genre, sort: POPULARITY_DESC) { id type title { english romaji } coverImage { large } episodes seasonYear format genres relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } } } } }`;
     try {
         const res = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, variables: { genre } }) });
@@ -511,6 +518,9 @@ async function loadGenreManga(genre, btnElem) {
         document.querySelectorAll('.manga-genre-tab-btn').forEach(b => b.className = 'bouncy-chip manga-genre-tab-btn px-3 py-1.5 rounded-xl bg-[#151F2E] border border-[#2A3A4E] text-[#9FADBD] text-xs font-bold shrink-0');
         btnElem.className = 'bouncy-chip manga-genre-tab-btn px-3 py-1.5 rounded-xl bg-[#3DB4F2]/20 border border-[#3DB4F2] text-[#3DB4F2] text-xs font-bold shrink-0';
     }
+    const moreBtn = document.getElementById('genre-manga-more-btn');
+    if (moreBtn) moreBtn.href = `https://anilist.co/search/manga?genres=${genre}`;
+
     const query = `query ($genre: String) { Page(perPage: 6) { media(type: MANGA, genre: $genre, sort: POPULARITY_DESC) { id type title { english romaji } coverImage { large } chapters format genres relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } } } } }`;
     try {
         const res = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, variables: { genre } }) });
