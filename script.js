@@ -11,8 +11,8 @@ let currentDrawerTab = 'ANIME';
 let anilistUser = null;
 let userMediaList = {};
 
-// Укажите ваш Client ID для работы AniList OAuth (или оставьте демо-ключ/пустым для публичного режима)
-const ANILIST_CLIENT_ID = '54503';
+// Укажите ваш Client ID для работы AniList OAuth
+const ANILIST_CLIENT_ID = 'YOUR_CLIENT_ID';
 
 function initCommon() {
     updateSavedCount();
@@ -92,7 +92,7 @@ async function checkAuthAndInitUser() {
         query {
           Viewer {
             id name avatar { large }
-            options { scoringSystem }
+            mediaListOptions { scoreFormat }
             statistics {
               anime { count episodesWatched meanScore }
               manga { count chaptersRead meanScore }
@@ -191,7 +191,7 @@ async function loadUserProfileData(username) {
     query ($search: String) {
       User(name: $search) {
         name about avatar { large }
-        options { scoringSystem }
+        mediaListOptions { scoreFormat }
         statistics {
           anime { count episodesWatched meanScore }
           manga { count chaptersRead meanScore }
@@ -263,20 +263,20 @@ function renderUserProfile(user) {
 }
 
 // Конвертация оценки под систему AniList пользователя
-function formatScoreBySystem(score90, scoringSystem) {
+function formatScoreBySystem(score90, scoreFormat) {
     const ratio = score90 / 90;
-    if (!scoringSystem || scoringSystem === 'POINT_100') return Math.round(ratio * 100) + ' / 100';
-    if (scoringSystem === 'POINT_10_DECIMAL') return (ratio * 10).toFixed(1) + ' / 10';
-    if (scoringSystem === 'POINT_10') return Math.round(ratio * 10) + ' / 10';
-    if (scoringSystem === 'POINT_5') return Math.round(ratio * 5) + ' / 5 ★';
-    if (scoringSystem === 'POINT_3') {
+    if (!scoreFormat || scoreFormat === 'POINT_100') return Math.round(ratio * 100) + ' / 100';
+    if (scoreFormat === 'POINT_10_DECIMAL') return (ratio * 10).toFixed(1) + ' / 10';
+    if (scoreFormat === 'POINT_10') return Math.round(ratio * 10) + ' / 10';
+    if (scoreFormat === 'POINT_5') return Math.round(ratio * 5) + ' / 5 ★';
+    if (scoreFormat === 'POINT_3') {
         const val = Math.round(ratio * 2) + 1;
         return {1: '😞', 2: '😐', 3: '😊'}[val] || '😊';
     }
     return score90 + ' / 90';
 }
 
-// Рандомайзер (Полностью починенная логика)
+// Рандомайзер
 function setRandomMediaType(type) {
     randomMediaType = type;
     const btnAnime = document.getElementById('rand-type-anime');
@@ -374,7 +374,7 @@ function renderRandomResults(list) {
     }
 }
 
-// Стандартные функции каталога и поиска
+// Стандартные функции поиска и каталога
 function openSearchModal() {
     const modal = document.getElementById('search-modal');
     if (modal) modal.classList.remove('hidden');
@@ -757,8 +757,8 @@ function updateSliders() {
 
     const convertedEl = document.getElementById('anilist-converted-score');
     if (convertedEl) {
-        const scoringSys = anilistUser && anilistUser.options ? anilistUser.options.scoringSystem : 'POINT_100';
-        const formatted = formatScoreBySystem(score90, scoringSys);
+        const scoreFormat = anilistUser && anilistUser.mediaListOptions ? anilistUser.mediaListOptions.scoreFormat : 'POINT_100';
+        const formatted = formatScoreBySystem(score90, scoreFormat);
         convertedEl.innerText = `AniList: ${formatted}`;
         convertedEl.classList.remove('hidden');
     }
@@ -857,7 +857,7 @@ function renderSavedList() {
         
         let scoreDisplay = `<span class="font-rubik-black text-xs text-[#3DB4F2]">${item.score90} / 90</span>`;
         if (userMediaList[item.id]) {
-            const sys = anilistUser && anilistUser.options ? anilistUser.options.scoringSystem : 'POINT_100';
+            const sys = anilistUser && anilistUser.mediaListOptions ? anilistUser.mediaListOptions.scoreFormat : 'POINT_100';
             scoreDisplay += ` <span class="text-[10px] text-[#9FADBD]">| AL: ${formatScoreBySystem(userMediaList[item.id].score * 10, sys)}</span>`;
         } else {
             scoreDisplay += ` <button onclick="rateOnAniList(${item.id})" class="ml-2 px-2 py-0.5 rounded bg-[#3DB4F2]/20 text-[#3DB4F2] text-[9px] font-bold">Оценить</button>`;
@@ -924,7 +924,7 @@ function showToast(message) {
     }, 2200);
 }
 
-// Рендер карусели на главной
+// Загрузка контента главной страницы
 async function loadHomePageContent() {
     const seasonObj = getCurrentSeasonObj();
     const query = `
