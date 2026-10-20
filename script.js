@@ -63,13 +63,13 @@ async function searchAllMedia(queryStr) {
     query ($search: String) {
       anime: Page(perPage: 5) {
         media(search: $search, type: ANIME) {
-          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres
+          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres averageScore status
           relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
         }
       }
       manga: Page(perPage: 5) {
         media(search: $search, type: MANGA) {
-          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description chapters volumes format source genres
+          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description chapters volumes format source genres averageScore status
           relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
         }
       }
@@ -219,13 +219,8 @@ function renderRelations(relationsData) {
         wrapper.className = 'shrink-0 cursor-pointer group relative';
         
         if (hoverTitle) {
-            wrapper.onmouseenter = () => {
-                hoverTitle.innerText = title;
-                hoverTitle.classList.remove('hidden');
-            };
-            wrapper.onmouseleave = () => {
-                hoverTitle.classList.add('hidden');
-            };
+            wrapper.onmouseenter = () => { hoverTitle.innerText = `${edge.relationType}: ${title}`; hoverTitle.classList.remove('hidden'); };
+            wrapper.onmouseleave = () => { hoverTitle.classList.add('hidden'); };
         }
 
         wrapper.onclick = () => fetchMediaById(node.id, node.type);
@@ -243,7 +238,7 @@ async function fetchMediaById(id, type) {
     const query = `
     query ($id: Int, $type: MediaType) {
       Media(id: $id, type: $type) {
-        id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes chapters volumes seasonYear season format source genres
+        id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes chapters volumes seasonYear season format source genres averageScore status
         relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
       }
     }
@@ -267,26 +262,17 @@ async function fetchMediaById(id, type) {
 function setupDragScroll() {
     const slider = document.getElementById('anime-relations');
     if (!slider) return;
-    let isDown = false;
-    let startX;
-    let scrollLeft;
+    let isDown = false, startX, scrollLeft;
 
     slider.addEventListener('mousedown', (e) => {
-        isDown = true;
-        slider.classList.add('drag-grabbing');
-        slider.classList.remove('drag-grab');
-        startX = e.pageX - slider.offsetLeft;
-        scrollLeft = slider.scrollLeft;
+        isDown = true; slider.classList.add('drag-grabbing'); slider.classList.remove('drag-grab');
+        startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft;
     });
-
     slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('drag-grabbing'); slider.classList.add('drag-grab'); });
     slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('drag-grabbing'); slider.classList.add('drag-grab'); });
-
     slider.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - slider.offsetLeft;
-        slider.scrollLeft = scrollLeft - (x - startX) * 1.8;
+        if (!isDown) return; e.preventDefault();
+        slider.scrollLeft = scrollLeft - (e.pageX - slider.offsetLeft - startX) * 1.8;
     });
 }
 
@@ -300,11 +286,9 @@ function setup3DCardTilt() {
         const rect = container.getBoundingClientRect();
         const rotateX = ((e.clientY - rect.top - rect.height/2) / (rect.height/2)) * -12;
         const rotateY = ((e.clientX - rect.left - rect.width/2) / (rect.width/2)) * 12;
-
         card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.04, 1.04, 1.04)`;
         glare.style.opacity = '1';
     });
-
     container.addEventListener('mouseleave', () => {
         card.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
         glare.style.opacity = '0';
@@ -330,29 +314,21 @@ async function loadHomePageContent() {
     query ($season: MediaSeason, $seasonYear: Int) {
       seasonAnime: Page(perPage: 50) {
         media(type: ANIME, season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres
+          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres averageScore status
           relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
         }
       }
       trendingAnime: Page(perPage: 6) {
-        media(type: ANIME, sort: TRENDING_DESC) {
-          id type title { english romaji native } coverImage { large medium } seasonYear format
-        }
+        media(type: ANIME, sort: TRENDING_DESC) { id type title { english romaji native } coverImage { large medium } seasonYear format averageScore status }
       }
       trendingManga: Page(perPage: 6) {
-        media(type: MANGA, sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } chapters format
-        }
+        media(type: MANGA, sort: POPULARITY_DESC) { id type title { english romaji native } coverImage { large medium } chapters format averageScore status }
       }
       hentaiAnime: Page(perPage: 6) {
-        media(type: ANIME, genre: "Hentai", sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } seasonYear format
-        }
+        media(type: ANIME, genre: "Hentai", sort: POPULARITY_DESC) { id type title { english romaji native } coverImage { large medium } seasonYear format }
       }
       hentaiManga: Page(perPage: 6) {
-        media(type: MANGA, genre: "Hentai", sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } chapters format
-        }
+        media(type: MANGA, genre: "Hentai", sort: POPULARITY_DESC) { id type title { english romaji native } coverImage { large medium } chapters format }
       }
     }
     `;
@@ -374,9 +350,7 @@ async function loadHomePageContent() {
             if (data.data.hentaiAnime) renderHentaiGrid('hentai-anime-grid', data.data.hentaiAnime.media, false);
             if (data.data.hentaiManga) renderHentaiGrid('hentai-manga-grid', data.data.hentaiManga.media, true);
         }
-    } catch (err) {
-        console.error("Home loading error:", err);
-    }
+    } catch (err) { console.error("Home loading error:", err); }
 
     loadGenreAnime('Action');
     loadGenreManga('Action');
@@ -589,7 +563,7 @@ async function executeRandomRoll(btn) {
     if (!isNaN(scoreMin)) { queryArgs.push('$scoreMin: Int'); mediaArgs.push('averageScore_greater:$scoreMin'); variables.scoreMin = scoreMin - 1; }
     if (!isNaN(scoreMax)) { queryArgs.push('$scoreMax: Int'); mediaArgs.push('averageScore_lesser:$scoreMax'); variables.scoreMax = scoreMax + 1; }
 
-    const query = `query (${queryArgs.join(', ')}) { Page(page: $page, perPage: $perPage) { media(${mediaArgs.join(', ')}) { id type title { english romaji } coverImage { large } description episodes chapters seasonYear format source genres averageScore relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } } } } }`;
+    const query = `query (${queryArgs.join(', ')}) { Page(page: $page, perPage: $perPage) { media(${mediaArgs.join(', ')}) { id type title { english romaji } coverImage { large } description episodes chapters seasonYear format source genres averageScore status relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } } } } }`;
 
     try {
         const res = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, variables }) });
@@ -625,14 +599,29 @@ function renderRandomResults(list) {
         return;
     }
 
+    const statusMap = { 'FINISHED': 'Завершён', 'RELEASING': 'Онгоинг', 'NOT_YET_RELEASED': 'Скоро', 'CANCELLED': 'Отменен' };
+
     list.forEach(item => {
         const card = document.createElement('div');
         card.className = 'bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-[#3DB4F2] transition p-2.5 flex items-center gap-3 shadow-md';
+        
+        const seasonInfo = item.season ? `${item.season} ${item.seasonYear || ''}` : (item.seasonYear || 'Манга');
+        const genresInfo = item.genres ? item.genres.slice(0, 2).join(', ') : '';
+        const epsInfo = item.type === 'MANGA' ? `${item.chapters || '?'} гл.` : `${item.episodes || '?'} сер.`;
+        const statusInfo = statusMap[item.status] || item.status || '';
+        const formatInfo = item.format || 'TV';
+
         card.innerHTML = `
             <img src="${item.coverImage.large}" class="w-16 h-22 object-cover rounded-lg shrink-0 shadow">
             <div class="flex-1 min-w-0 space-y-1">
                 <h4 class="text-xs font-bold text-white truncate">${item.title.english || item.title.romaji}</h4>
-                <p class="text-[10px] text-[#9FADBD]">${item.seasonYear || ''} • ${item.episodes || '?'} сер.</p>
+                <p class="text-[10px] text-[#9FADBD] truncate">${genresInfo}</p>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="px-1.5 py-0.5 rounded bg-[#3DB4F2]/10 text-[#3DB4F2] text-[9px] font-bold">${item.averageScore || 0}% AL</span>
+                    <span class="px-1.5 py-0.5 rounded bg-[#1E2C3D] text-[#9FADBD] text-[9px] font-bold">${formatInfo}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-[#1E2C3D] text-[#EDF1F5] text-[9px] font-bold">${epsInfo}</span>
+                </div>
+                <p class="text-[9px] text-[#9FADBD]/80">${seasonInfo} • ${statusInfo}</p>
                 <button class="bouncy-chip mt-1 px-3 py-1 rounded-lg bg-[#3DB4F2] text-[#0B1622] font-bold text-[10px] transition">Оценить</button>
             </div>
         `;
