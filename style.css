@@ -42,7 +42,6 @@ body {
 .hero-slide-fade-out { opacity: 0; }
 .hero-slide-fade-in { opacity: 1; }
 
-/* Новый стильный вид колеса рулетки */
 .wheel-container { perspective: 800px; }
 .neon-wheel {
     transition: transform 3.5s cubic-bezier(0.15, 0.85, 0.35, 1.2);
@@ -51,15 +50,31 @@ body {
     will-change: transform;
 }
 
+/* Стилизация обложки манги под книжку с анимацией приоткрывания */
+.manga-book-container {
+    perspective: 1000px;
+}
 .manga-book-cover {
     position: relative;
-    box-shadow: -4px 0 8px -2px rgba(0,0,0,0.5), 3px 3px 8px rgba(0,0,0,0.4);
+    aspect-ratio: 4 / 5;
+    transform-style: preserve-3d;
+    transform-origin: left center;
+    transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.35s ease;
+    box-shadow: -6px 4px 12px rgba(0,0,0,0.6), inset 2px 0 5px rgba(255,255,255,0.15);
     border-radius: 2px 8px 8px 2px;
 }
 .manga-book-cover::before {
-    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 7px;
-    background: linear-gradient(to right, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.3) 100%);
-    z-index: 10; border-top-left-radius: 2px; border-bottom-left-radius: 2px;
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0; width: 10px;
+    background: linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.5) 100%);
+    z-index: 10;
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+.manga-book-container:hover .manga-book-cover {
+    transform: rotateY(-14deg) scale(1.03) translateZ(5px);
+    box-shadow: -12px 8px 20px rgba(0,0,0,0.8), inset 4px 0 8px rgba(255,255,255,0.2);
 }
 
 .nsfw-mask { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: opacity 0.25s ease; }
