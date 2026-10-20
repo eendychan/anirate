@@ -31,8 +31,8 @@
                     Ani<span class="text-[#3DB4F2]">Rate</span>
                 </a>
                 <div class="hidden sm:flex items-center gap-3">
-                    <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition" data-i18n="nav_home">Главная</a>
-                    <a href="../random/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition" data-i18n="nav_random">Рандом</a>
+                    <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Главная</a>
+                    <a href="../random/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Рандом</a>
                 </div>
             </div>
 
@@ -42,14 +42,14 @@
                 </button>
                 <button onclick="toggleSavedDrawer()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E2C3D] hover:bg-[#2A3A4E] border border-[#2A3A4E] text-[#3DB4F2] text-xs font-bold transition shrink-0">
                     <span class="material-symbols-outlined text-base">bookmarks</span>
-                    <span class="hidden sm:inline" data-i18n="list">Список</span>
+                    <span class="hidden sm:inline">Список</span>
                     <span id="saved-count-badge" class="bg-[#3DB4F2]/20 text-[#3DB4F2] px-1.5 py-0.2 rounded-md text-[10px]">0</span>
                 </button>
 
-                <!-- Кнопка Авторизации / Виджет профиля -->
+                <!-- Авторизация -->
                 <div id="auth-container">
                     <button onclick="loginAniList()" class="px-3 py-1.5 rounded-xl bg-[#3DB4F2]/20 border border-[#3DB4F2] text-[#3DB4F2] text-xs font-bold hover:bg-[#3DB4F2]/30 transition flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-base">login</span> <span data-i18n="auth">Авторизация</span>
+                        <span class="material-symbols-outlined text-base">login</span> <span>Авторизация</span>
                     </button>
                 </div>
 
@@ -60,10 +60,10 @@
                     </button>
                     <div id="overflow-menu" class="absolute right-0 mt-2 w-44 bg-[#151F2E] border border-[#2A3A4E] rounded-xl shadow-2xl hidden z-50 p-1.5 space-y-1">
                         <button onclick="toggleTheme()" class="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold text-[#EDF1F5] hover:bg-[#1E2C3D] flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm text-[#3DB4F2]">contrast</span> <span data-i18n="theme_toggle">Тема (Тёмная/Светлая)</span>
+                            <span class="material-symbols-outlined text-sm text-[#3DB4F2]">contrast</span> <span>Тема</span>
                         </button>
                         <button onclick="toggleLanguage()" class="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold text-[#EDF1F5] hover:bg-[#1E2C3D] flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm text-[#3DB4F2]">language</span> <span data-i18n="lang_toggle">Язык (RU / EN)</span>
+                            <span class="material-symbols-outlined text-sm text-[#3DB4F2]">language</span> <span>Язык (RU/EN)</span>
                         </button>
                     </div>
                 </div>
@@ -100,9 +100,7 @@
                     <span class="material-symbols-outlined text-base">close</span>
                 </button>
             </div>
-            <div id="profile-modal-content" class="p-4 overflow-y-auto space-y-4 text-xs text-[#EDF1F5]">
-                <!-- Заполняется динамически через JS -->
-            </div>
+            <div id="profile-modal-content" class="p-4 overflow-y-auto space-y-4 text-xs text-[#EDF1F5]"></div>
         </div>
     </div>
 
@@ -114,7 +112,7 @@
         </div>
     </div>
 
-    <!-- Область оценивания -->
+    <!-- Главная область -->
     <main class="flex-1 w-full flex flex-col items-center justify-center p-4">
         <div id="rating-card" class="max-w-3xl w-full p-4 sm:p-5 bg-[#151F2E] rounded-2xl border border-[#2A3A4E] shadow-2xl">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
@@ -139,7 +137,7 @@
                         </div>
                         <div id="anime-genres" class="flex flex-wrap justify-center md:justify-start gap-1 pt-0.5"></div>
                         
-                        <!-- Блок «Связанное» -->
+                        <!-- Связанное -->
                         <div class="pt-2 border-t border-[#2A3A4E]/50 w-full">
                             <div class="flex items-center justify-between text-[#9FADBD] mb-1.5">
                                 <span class="text-[10px] font-bold tracking-wider">Связанное</span>
@@ -159,7 +157,7 @@
                             <h4 class="text-[10px] font-bold tracking-wider">Критерии качества</h4>
                         </div>
                         
-                        <!-- Динамический контейнер критериев (Для манги Послевкусие идет справа от Текст) -->
+                        <!-- Критерии -->
                         <div id="criteria-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
                     </div>
 
