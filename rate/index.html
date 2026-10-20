@@ -10,9 +10,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        anilist: { bg: '#0B1622', card: '#151F2E', border: '#2A3A4E', accent: '#3DB4F2', text: '#EDF1F5', muted: '#9FADBD' }
-                    },
+                    colors: { anilist: { bg: '#0B1622', card: '#151F2E', border: '#2A3A4E', accent: '#3DB4F2', text: '#EDF1F5', muted: '#9FADBD' } },
                     fontFamily: { rubik: ['Rubik', 'sans-serif'] }
                 }
             }
@@ -29,12 +27,13 @@
     <header class="w-full bg-[#151F2E]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[#2A3A4E]/60 px-3 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div class="flex items-center gap-4">
-                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-80 transition cursor-pointer flex items-center gap-1">
+                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-80 transition flex items-center gap-1">
                     Ani<span class="text-[#3DB4F2]">Rate</span>
                 </a>
                 <div class="hidden sm:flex items-center gap-3">
-                    <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition cursor-pointer">Главная</a>
-                    <a href="../random/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition cursor-pointer">Рандом</a>
+                    <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Главная</a>
+                    <a href="../random/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Рандом</a>
+                    <a href="./" class="text-xs font-bold text-[#3DB4F2] transition">Оценка</a>
                 </div>
             </div>
 
@@ -51,7 +50,7 @@
         </div>
     </header>
 
-    <!-- Overlay Search Modal -->
+    <!-- Search Modal -->
     <div id="search-modal" class="fixed inset-0 z-50 bg-[#0B1622]/80 backdrop-blur-md hidden flex flex-col items-center justify-start pt-12 sm:pt-16 px-4 transition-all">
         <div class="max-w-2xl w-full bg-[#151F2E] rounded-2xl border border-[#2A3A4E] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div class="p-3 border-b border-[#2A3A4E] flex items-center gap-3 bg-[#0B1622]/40 shrink-0">
@@ -69,7 +68,7 @@
         </div>
     </div>
 
-    <!-- Cover Zoom Modal -->
+    <!-- Cover Modal -->
     <div id="cover-modal" onclick="closeCoverModal()" class="fixed inset-0 z-50 bg-[#0B1622]/90 backdrop-blur-md hidden flex items-center justify-center p-4 cursor-pointer">
         <div class="relative max-w-sm sm:max-w-md w-full flex flex-col items-center">
             <img id="cover-modal-img" src="" class="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-[#2A3A4E]">
@@ -77,9 +76,9 @@
         </div>
     </div>
 
-    <!-- Main Content Area (Rating Form) -->
-    <main class="flex-1 w-full flex flex-col items-center">
-        <div id="rating-card" class="max-w-3xl w-full mx-auto p-3 sm:p-4 my-auto bg-[#151F2E] rounded-2xl border border-[#2A3A4E] shadow-2xl mt-6 mb-6">
+    <!-- Область оценивания строго по центру экрана (flex-1 + my-auto) -->
+    <main class="flex-1 w-full flex flex-col items-center justify-center p-4">
+        <div id="rating-card" class="max-w-3xl w-full p-4 sm:p-5 bg-[#151F2E] rounded-2xl border border-[#2A3A4E] shadow-2xl">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
                 <div class="md:col-span-4 flex flex-col items-center md:items-start space-y-2.5 bg-[#0B1622]/60 p-3 rounded-xl border border-[#2A3A4E]/60 overflow-hidden">
                     <div id="cover-container" onclick="openCoverModal()" class="cover-3d-wrapper relative group w-32 sm:w-36 shrink-0 cursor-pointer" title="Нажмите, чтобы увеличить">
@@ -91,25 +90,16 @@
                     <div class="w-full text-center md:text-left space-y-2 min-w-0">
                         <h3 id="anime-title" class="font-rubik-black text-sm text-white leading-tight break-words">Используйте поиск сверху</h3>
                         <div class="flex flex-wrap items-center justify-center md:justify-start gap-1">
-                            <span id="anime-season-year" class="info-badge-hover px-2 py-0.5 rounded-md bg-[#3DB4F2]/10 text-[#3DB4F2] text-[10px] font-bold border border-[#3DB4F2]/20 cursor-default">—</span>
-                            <span id="anime-episodes" class="info-badge-hover px-2 py-0.5 rounded-md bg-[#1E2C3D] text-[#9FADBD] text-[10px] font-bold border border-[#2A3A4E] cursor-default">—</span>
-                            <span id="anime-format" class="info-badge-hover px-2 py-0.5 rounded-md bg-[#1E2C3D] text-[#3DB4F2] text-[10px] font-bold border border-[#2A3A4E] cursor-default">—</span>
+                            <span id="anime-season-year" class="info-badge-hover px-2 py-0.5 rounded-md bg-[#3DB4F2]/10 text-[#3DB4F2] text-[10px] font-bold border border-[#3DB4F2]/20">—</span>
+                            <span id="anime-episodes" class="info-badge-hover px-2 py-0.5 rounded-md bg-[#1E2C3D] text-[#9FADBD] text-[10px] font-bold border border-[#2A3A4E]">—</span>
+                            <span id="anime-format" class="info-badge-hover px-2 py-0.5 rounded-md bg-[#1E2C3D] text-[#3DB4F2] text-[10px] font-bold border border-[#2A3A4E]">—</span>
                         </div>
-                        <div class="info-badge-hover inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1E2C3D]/80 border border-[#2A3A4E] text-[10px] cursor-default">
+                        <div class="info-badge-hover inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1E2C3D]/80 border border-[#2A3A4E] text-[10px]">
                             <span class="material-symbols-outlined text-xs text-[#3DB4F2]">menu_book</span>
-                            <span class="text-[#9FADBD]/70 font-semibold uppercase tracking-wider text-[9px]">Источник:</span>
+                            <span class="text-[#9FADBD]/70 font-semibold uppercase text-[9px]">Источник:</span>
                             <span id="anime-source" class="font-bold text-white">—</span>
                         </div>
                         <div id="anime-genres" class="flex flex-wrap justify-center md:justify-start gap-1 pt-0.5"></div>
-                        <div class="pt-2 border-t border-[#2A3A4E]/50 w-full">
-                            <div class="flex items-center justify-between text-[#9FADBD] mb-1.5">
-                                <span class="text-[10px] font-bold tracking-wider">Связанное</span>
-                            </div>
-                            <div id="anime-relations" class="flex gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar drag-grab select-none"></div>
-                            <div class="mt-1 flex items-center justify-center min-h-[20px]">
-                                <p id="relation-hover-title" class="text-[11px] font-bold text-[#3DB4F2] truncate w-full leading-tight text-center hidden"></p>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -120,36 +110,37 @@
                             <h4 class="text-[10px] font-bold tracking-wider">Критерии качества</h4>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2]/50 transition">
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">auto_stories</span>Содержание</span>
                                     <span id="val-content" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-content" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
                             </div>
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2]/50 transition">
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">group</span>Персонажи</span>
                                     <span id="val-characters" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-characters" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
                             </div>
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2]/50 transition">
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">palette</span>Визуал</span>
                                     <span id="val-visuals" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-visuals" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
                             </div>
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2]/50 transition">
+                            <!-- Переименовано в "Звучок" -->
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
                                 <div class="flex justify-between items-center text-xs font-bold">
-                                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">music_note</span>Звучок / Стиль</span>
+                                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">music_note</span>Звучок</span>
                                     <span id="val-audio" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-audio" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
                             </div>
                         </div>
-                        <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2]/50 transition">
+                        <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
                             <div class="flex justify-between items-center text-xs font-bold">
                                 <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">psychology</span>Послевкусие</span>
                                 <span id="val-aftertaste" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
@@ -158,16 +149,17 @@
                         </div>
                     </div>
 
+                    <!-- Сильная сторона: переименован пункт "Стиль" в "Звучок" -->
                     <div class="space-y-1.5">
                         <div class="flex items-center gap-1 text-[#9FADBD]">
                             <span class="material-symbols-outlined text-xs text-[#3DB4F2]">military_tech</span>
                             <h4 class="text-[10px] font-bold tracking-wider">Сильная сторона</h4>
                         </div>
                         <div id="strong-point-chips" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                            <button type="button" onclick="setStrongPoint('Содержание', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] hover:border-[#3DB4F2]/50 transition text-center" data-key="Содержание">Содержание</button>
-                            <button type="button" onclick="setStrongPoint('Персонажи', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] hover:border-[#3DB4F2]/50 transition text-center" data-key="Персонажи">Персонажи</button>
-                            <button type="button" onclick="setStrongPoint('Визуал', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] hover:border-[#3DB4F2]/50 transition text-center" data-key="Визуал">Визуал</button>
-                            <button type="button" onclick="setStrongPoint('Стиль', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] hover:border-[#3DB4F2]/50 transition text-center" data-key="Стиль">Стиль</button>
+                            <button type="button" onclick="setStrongPoint('Содержание', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Содержание">Содержание</button>
+                            <button type="button" onclick="setStrongPoint('Персонажи', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Персонажи">Персонажи</button>
+                            <button type="button" onclick="setStrongPoint('Визуал', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Визуал">Визуал</button>
+                            <button type="button" onclick="setStrongPoint('Звучок', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Звучок">Звучок</button>
                         </div>
                     </div>
 
@@ -176,7 +168,7 @@
                             <span id="score-90-value" class="font-rubik-black text-4xl sm:text-5xl text-[#3DB4F2] leading-none">0</span>
                             <span class="font-rubik-black text-sm text-[#9FADBD]">/ 90</span>
                         </div>
-                        <button onclick="saveCurrentRating()" title="Сохранить оценку" class="w-11 h-11 rounded-xl bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-black transition shadow-lg shadow-[#3DB4F2]/20 flex items-center justify-center shrink-0">
+                        <button onclick="saveCurrentRating()" title="Сохранить оценку" class="w-11 h-11 rounded-xl bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-black transition shadow-lg flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-2xl">bookmark_add</span>
                         </button>
                     </div>
@@ -189,7 +181,7 @@
         AniRate • Оценка тайтла
     </footer>
 
-    <!-- Saved Ratings Drawer -->
+    <!-- Saved Drawer -->
     <div id="saved-drawer" class="fixed inset-0 bg-[#0B1622]/80 backdrop-blur-sm z-50 flex justify-end hidden">
         <div class="bg-[#151F2E] max-w-sm w-full h-full shadow-2xl flex flex-col border-l border-[#2A3A4E]">
             <div class="p-3.5 border-b border-[#2A3A4E] flex items-center justify-between">
@@ -200,27 +192,23 @@
                         <p class="text-[10px] text-[#9FADBD]" id="drawer-subtitle">0 элементов</p>
                     </div>
                 </div>
-                <button onclick="toggleSavedDrawer()" class="w-7 h-7 rounded-lg hover:bg-[#1E2C3D] flex items-center justify-center text-[#9FADBD] transition">
+                <button onclick="toggleSavedDrawer()" class="w-7 h-7 rounded-lg hover:bg-[#1E2C3D] flex items-center justify-center text-[#9FADBD]">
                     <span class="material-symbols-outlined text-base">close</span>
                 </button>
             </div>
             <div class="p-2 border-b border-[#2A3A4E] flex gap-1 bg-[#0B1622]/40">
-                <button id="drawer-tab-anime" onclick="switchDrawerTab('ANIME')" class="flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622] transition">Аниме</button>
-                <button id="drawer-tab-manga" onclick="switchDrawerTab('MANGA')" class="flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD] hover:text-white transition">Манга</button>
+                <button id="drawer-tab-anime" onclick="switchDrawerTab('ANIME')" class="flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622]">Аниме</button>
+                <button id="drawer-tab-manga" onclick="switchDrawerTab('MANGA')" class="flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD]">Манга</button>
             </div>
             <div id="saved-list-container" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
             <div class="p-3 border-t border-[#2A3A4E] bg-[#0B1622] flex justify-between items-center gap-2">
-                <button onclick="exportRatingsJson()" class="px-3 py-2 rounded-xl bg-[#1E2C3D] hover:bg-[#2A3A4E] text-[#3DB4F2] text-xs font-bold transition flex items-center gap-1 border border-[#2A3A4E]">
-                    <span class="material-symbols-outlined text-sm">download</span> JSON
-                </button>
-                <button onclick="clearAllRatings()" class="px-3 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">delete_sweep</span> Очистить
-                </button>
+                <button onclick="exportRatingsJson()" class="px-3 py-2 rounded-xl bg-[#1E2C3D] text-[#3DB4F2] text-xs font-bold border border-[#2A3A4E]">JSON</button>
+                <button onclick="clearAllRatings()" class="px-3 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold">Очистить</button>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#151F2E] text-[#3DB4F2] px-4 py-2.5 rounded-xl shadow-2xl border border-[#3DB4F2]/30 text-xs font-bold transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-1.5">
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#151F2E] text-[#3DB4F2] px-4 py-2.5 rounded-xl shadow-2xl border border-[#3DB4F2]/30 text-xs font-bold opacity-0 pointer-events-none z-50 flex items-center gap-1.5 transition-all">
         <span class="material-symbols-outlined text-sm">info</span>
         <span id="toast-text">Уведомление</span>
     </div>
@@ -230,7 +218,6 @@
         window.onload = function() {
             initCommon();
             setStrongPoint('Содержание');
-            setupDragScroll();
             setup3DCardTilt();
             updateSliders();
         };
