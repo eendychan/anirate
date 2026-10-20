@@ -8,48 +8,47 @@ let currentWheelRotation = 0;
 let randomMediaType = 'ANIME';
 let currentDrawerTab = 'ANIME';
 
-window.onload = function() {
+// Инициализация общих элементов для всех страниц (поиск, счетчики, модалки)
+function initCommon() {
     updateSavedCount();
-    setStrongPoint('Содержание');
-    setupDragScroll();
-    setup3DCardTilt();
-    loadHomePageContent();
 
     const searchInput = document.getElementById('anime-search-input');
-    let searchTimeout = null;
+    if (searchInput) {
+        let searchTimeout = null;
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(searchTimeout);
 
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        clearTimeout(searchTimeout);
+            if (query.length < 2) {
+                document.getElementById('search-results').innerHTML = '<div class="p-6 text-center text-xs text-[#9FADBD]">Начните вводить название...</div>';
+                document.getElementById('search-loading').classList.add('hidden');
+                return;
+            }
 
-        if (query.length < 2) {
-            document.getElementById('search-results').innerHTML = '<div class="p-6 text-center text-xs text-[#9FADBD]">Начните вводить название...</div>';
-            document.getElementById('search-loading').classList.add('hidden');
-            return;
-        }
-
-        document.getElementById('search-loading').classList.remove('hidden');
-        searchTimeout = setTimeout(() => {
-            searchAllMedia(query);
-        }, 350);
-    });
-
-    updateSliders();
-};
+            document.getElementById('search-loading').classList.remove('hidden');
+            searchTimeout = setTimeout(() => {
+                searchAllMedia(query);
+            }, 350);
+        });
+    }
+}
 
 function openSearchModal() {
     const modal = document.getElementById('search-modal');
     modal.classList.remove('hidden');
     setTimeout(() => {
-        document.getElementById('anime-search-input').focus();
+        const input = document.getElementById('anime-search-input');
+        if (input) input.focus();
     }, 50);
 }
 
 function closeSearchModal() {
     const modal = document.getElementById('search-modal');
     modal.classList.add('hidden');
-    document.getElementById('anime-search-input').value = '';
-    document.getElementById('search-results').innerHTML = '<div class="p-6 text-center text-xs text-[#9FADBD]">Начните вводить название...</div>';
+    const input = document.getElementById('anime-search-input');
+    if (input) input.value = '';
+    const res = document.getElementById('search-results');
+    if (res) res.innerHTML = '<div class="p-6 text-center text-xs text-[#9FADBD]">Начните вводить название...</div>';
 }
 
 function openCoverModal() {
@@ -89,14 +88,16 @@ async function searchAllMedia(queryStr) {
         });
 
         const data = await res.json();
-        document.getElementById('search-loading').classList.add('hidden');
+        const loading = document.getElementById('search-loading');
+        if (loading) loading.classList.add('hidden');
 
         if (data.data) {
             renderSearchResults(data.data.anime.media, data.data.manga.media);
         }
     } catch (err) {
         console.error("AniList API Error:", err);
-        document.getElementById('search-loading').classList.add('hidden');
+        const loading = document.getElementById('search-loading');
+        if (loading) loading.classList.add('hidden');
     }
 }
 
@@ -137,7 +138,15 @@ function createSearchItemNode(media) {
     item.className = 'flex items-center gap-3 p-2 rounded-xl hover:bg-[#1E2C3D] cursor-pointer transition';
     item.onclick = () => {
         closeSearchModal();
-        selectAnime(media);
+        // Если мы на главной, перенаправляем или сразу выбираем, но для страницы rate перенаправляем на /rate/ или активируем карточку
+        const path = window.location.pathname;
+        if (!path.includes('/rate/')) {
+            // Сохраняем выбранное аниме в sessionStorage и переходим на страницу rate
+            sessionStorage.setItem('selected_anime_temp', JSON.stringify(media));
+            window.location.href = '../rate/';
+        } else {
+            selectAnime(media);
+        }
     };
 
     item.innerHTML = `
@@ -150,61 +159,61 @@ function createSearchItemNode(media) {
     return item;
 }
 
+// Проверка при загрузке страницы rate, не передали ли аниме через sessionStorage
+document.addEventListener("DOMContentLoaded", () => {
+    const cached = sessionStorage.getItem('selected_anime_temp');
+    if (cached && document.getElementById('rating-card')) {
+        selectAnime(JSON.parse(cached));
+    }
+});
+
 function selectAnime(anime) {
     currentAnime = anime;
-    document.getElementById('home-view').classList.add('hidden');
-    document.getElementById('random-view').classList.add('hidden');
-    document.getElementById('rating-card').classList.remove('hidden');
-
     const title = anime.title.english || anime.title.romaji || anime.title.native;
     const cover = anime.coverImage.extraLarge || anime.coverImage.large || anime.coverImage.medium;
 
-    document.getElementById('anime-title').innerText = title;
-    document.getElementById('anime-cover').src = cover;
-    document.getElementById('anime-season-year').innerText = anime.seasonYear || (anime.type === 'MANGA' ? 'Манга' : 'N/A');
-    document.getElementById('anime-episodes').innerText = anime.type === 'MANGA' 
+    const elTitle = document.getElementById('anime-title');
+    if (elTitle) elTitle.innerText = title;
+    const elCover = document.getElementById('anime-cover');
+    if (elCover) elCover.src = cover;
+    
+    const elYear = document.getElementById('anime-season-year');
+    if (elYear) elYear.innerText = anime.seasonYear || (anime.type === 'MANGA' ? 'Манга' : 'N/A');
+    
+    const elEp = document.getElementById('anime-episodes');
+    if (elEp) elEp.innerText = anime.type === 'MANGA' 
         ? (anime.chapters ? `${anime.chapters} гл.` : 'Онгоинг') 
         : (anime.episodes ? `${anime.episodes} сер.` : '?-серий');
-    document.getElementById('anime-format').innerText = anime.format || (anime.type === 'MANGA' ? 'MANGA' : 'TV');
+        
+    const elFormat = document.getElementById('anime-format');
+    if (elFormat) elFormat.innerText = anime.format || (anime.type === 'MANGA' ? 'MANGA' : 'TV');
     
-    const srcMap = {
-        'MANGA': 'Manga',
-        'LIGHT_NOVEL': 'Ranobe',
-        'ORIGINAL': 'Original',
-        'VISUAL_NOVEL': 'VN',
-        'NOVEL': 'Novel',
-        'GAME': 'Game'
-    };
-    document.getElementById('anime-source').innerText = srcMap[anime.source] || anime.source || 'Original';
+    const srcMap = { 'MANGA': 'Manga', 'LIGHT_NOVEL': 'Ranobe', 'ORIGINAL': 'Original', 'VISUAL_NOVEL': 'VN', 'NOVEL': 'Novel', 'GAME': 'Game' };
+    const elSource = document.getElementById('anime-source');
+    if (elSource) elSource.innerText = srcMap[anime.source] || anime.source || 'Original';
 
     const genresContainer = document.getElementById('anime-genres');
-    genresContainer.innerHTML = '';
-    if (anime.genres && anime.genres.length > 0) {
-        anime.genres.slice(0, 3).forEach(g => {
-            const span = document.createElement('span');
-            span.className = 'px-1.5 py-0.5 rounded bg-[#1E2C3D] text-[#9FADBD] text-[9px] font-semibold border border-[#2A3A4E]';
-            span.innerText = g;
-            genresContainer.appendChild(span);
-        });
+    if (genresContainer) {
+        genresContainer.innerHTML = '';
+        if (anime.genres && anime.genres.length > 0) {
+            anime.genres.slice(0, 3).forEach(g => {
+                const span = document.createElement('span');
+                span.className = 'px-1.5 py-0.5 rounded bg-[#1E2C3D] text-[#9FADBD] text-[9px] font-semibold border border-[#2A3A4E]';
+                span.innerText = g;
+                genresContainer.appendChild(span);
+            });
+        }
     }
 
     renderRelations(anime.relations);
-
-    document.getElementById('slider-content').value = 8;
-    document.getElementById('slider-characters').value = 8;
-    document.getElementById('slider-visuals').value = 8;
-    document.getElementById('slider-audio').value = 8;
-    document.getElementById('slider-aftertaste').value = 8;
-    updateSliders();
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderRelations(relationsData) {
     const container = document.getElementById('anime-relations');
+    if (!container) return;
     const hoverTitle = document.getElementById('relation-hover-title');
     container.innerHTML = '';
-    hoverTitle.classList.add('hidden');
+    if (hoverTitle) hoverTitle.classList.add('hidden');
 
     if (!relationsData || !relationsData.edges || relationsData.edges.length === 0) {
         container.innerHTML = '<span class="text-[10px] text-[#9FADBD]/60 italic">Нет связанных тайтлов</span>';
@@ -220,13 +229,15 @@ function renderRelations(relationsData) {
         const wrapper = document.createElement('div');
         wrapper.className = 'shrink-0 cursor-pointer group relative';
         
-        wrapper.onmouseenter = () => {
-            hoverTitle.innerText = title;
-            hoverTitle.classList.remove('hidden');
-        };
-        wrapper.onmouseleave = () => {
-            hoverTitle.classList.add('hidden');
-        };
+        if (hoverTitle) {
+            wrapper.onmouseenter = () => {
+                hoverTitle.innerText = title;
+                hoverTitle.classList.remove('hidden');
+            };
+            wrapper.onmouseleave = () => {
+                hoverTitle.classList.add('hidden');
+            };
+        }
 
         wrapper.onclick = () => fetchMediaById(node.id, node.type);
 
@@ -266,6 +277,7 @@ async function fetchMediaById(id, type) {
 
 function setupDragScroll() {
     const slider = document.getElementById('anime-relations');
+    if (!slider) return;
     let isDown = false;
     let startX;
     let scrollLeft;
@@ -301,6 +313,7 @@ function setupDragScroll() {
 
 function setup3DCardTilt() {
     const container = document.getElementById('cover-container');
+    if (!container) return;
     const card = document.getElementById('cover-card');
     const glare = document.getElementById('cover-glare');
 
@@ -308,10 +321,8 @@ function setup3DCardTilt() {
         const rect = container.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-
         const rotateX = ((y - centerY) / centerY) * -12;
         const rotateY = ((x - centerX) / centerX) * 12;
 
@@ -341,7 +352,6 @@ function getCurrentSeasonObj() {
 
 async function loadHomePageContent() {
     const seasonObj = getCurrentSeasonObj();
-
     const query = `
     query ($season: MediaSeason, $seasonYear: Int) {
       seasonAnime: Page(perPage: 50) {
@@ -405,11 +415,11 @@ async function loadHomePageContent() {
 function setupHeroCarousel(seasonName) {
     if (!heroList || heroList.length === 0) return;
     heroIndex = 0;
-    
     const slider = document.getElementById('hero-roulette-slider');
-    slider.max = heroList.length;
-    slider.value = 1;
-
+    if (slider) {
+        slider.max = heroList.length;
+        slider.value = 1;
+    }
     renderHeroSlide(heroIndex, seasonName);
     restartHeroTimer();
 }
@@ -445,6 +455,7 @@ function renderHeroSlide(idx, seasonName) {
     if (!anime) return;
 
     const bgLayer = document.getElementById('hero-bg-layer');
+    if (!bgLayer) return;
     const title = anime.title.english || anime.title.romaji;
     const bgImage = anime.bannerImage || anime.coverImage.extraLarge || anime.coverImage.large;
 
@@ -476,17 +487,22 @@ function renderHeroSlide(idx, seasonName) {
         document.getElementById('hero-desc').innerText = desc;
 
         const rateBtn = document.getElementById('hero-rate-btn');
-        rateBtn.onclick = (e) => {
-            triggerBouncyAnimation(rateBtn);
-            selectAnime(anime);
-        };
+        if (rateBtn) {
+            rateBtn.onclick = (e) => {
+                triggerBouncyAnimation(rateBtn);
+                sessionStorage.setItem('selected_anime_temp', JSON.stringify(anime));
+                window.location.href = './rate/';
+            };
+        }
 
         bgLayer.classList.remove('hero-slide-fade-out');
         bgLayer.classList.add('hero-slide-fade-in');
     }, 250);
 
-    document.getElementById('hero-roulette-counter').innerText = `${idx + 1} / ${heroList.length}`;
-    document.getElementById('hero-roulette-slider').value = idx + 1;
+    const counter = document.getElementById('hero-roulette-counter');
+    if (counter) counter.innerText = `${idx + 1} / ${heroList.length}`;
+    const slider = document.getElementById('hero-roulette-slider');
+    if (slider) slider.value = idx + 1;
 }
 
 function restartHeroTimer() {
@@ -502,6 +518,7 @@ function restartHeroTimer() {
 
 function renderCardsGrid(containerId, list, isManga = false) {
     const grid = document.getElementById(containerId);
+    if (!grid) return;
     grid.innerHTML = '';
 
     list.forEach(item => {
@@ -513,7 +530,10 @@ function renderCardsGrid(containerId, list, isManga = false) {
 
         const card = document.createElement('div');
         card.className = 'bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-[#3DB4F2] transition group cursor-pointer flex flex-col justify-between shadow-md';
-        card.onclick = () => selectAnime(item);
+        card.onclick = () => {
+            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
+            window.location.href = './rate/';
+        };
 
         const coverClass = isManga ? 'manga-book-cover' : '';
 
@@ -532,6 +552,7 @@ function renderCardsGrid(containerId, list, isManga = false) {
 
 function renderHentaiGrid(containerId, list, isManga = false) {
     const grid = document.getElementById(containerId);
+    if (!grid) return;
     grid.innerHTML = '';
 
     list.forEach(item => {
@@ -540,7 +561,10 @@ function renderHentaiGrid(containerId, list, isManga = false) {
 
         const card = document.createElement('div');
         card.className = 'nsfw-card bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-rose-500/80 transition group cursor-pointer flex flex-col justify-between shadow-md relative';
-        card.onclick = () => selectAnime(item);
+        card.onclick = () => {
+            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
+            window.location.href = './rate/';
+        };
 
         const coverClass = isManga ? 'manga-book-cover' : '';
 
@@ -631,26 +655,11 @@ async function loadGenreManga(genre, btnElem) {
     }
 }
 
-function showHomePage() {
-    currentAnime = null;
-    document.getElementById('rating-card').classList.add('hidden');
-    document.getElementById('random-view').classList.add('hidden');
-    document.getElementById('home-view').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function showRandomPage() {
-    currentAnime = null;
-    document.getElementById('rating-card').classList.add('hidden');
-    document.getElementById('home-view').classList.add('hidden');
-    document.getElementById('random-view').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 function setRandomMediaType(type) {
     randomMediaType = type;
     const btnAnime = document.getElementById('rand-type-anime');
     const btnManga = document.getElementById('rand-type-manga');
+    if (!btnAnime || !btnManga) return;
 
     if (type === 'ANIME') {
         btnAnime.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622] transition';
@@ -666,7 +675,7 @@ async function executeRandomRoll(btn) {
 
     const disc = document.getElementById('half-wheel-disc');
     currentWheelRotation += 1080 + Math.floor(Math.random() * 360);
-    disc.style.transform = `rotate(${currentWheelRotation}deg)`;
+    if (disc) disc.style.transform = `rotate(${currentWheelRotation}deg)`;
 
     const yearStart = parseInt(document.getElementById('rand-year-start').value) || null;
     const yearEnd = parseInt(document.getElementById('rand-year-end').value) || null;
@@ -729,11 +738,12 @@ async function executeRandomRoll(btn) {
 function renderRandomResults(list) {
     const containerSection = document.getElementById('random-results-section');
     const grid = document.getElementById('random-results-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     if (!list || list.length === 0) {
         showToast('Нет тайтлов с такими фильтрами');
-        containerSection.classList.add('hidden');
+        if (containerSection) containerSection.classList.add('hidden');
         return;
     }
 
@@ -761,16 +771,23 @@ function renderRandomResults(list) {
             </div>
         `;
 
-        card.querySelector('button').onclick = () => selectAnime(item);
+        card.querySelector('button').onclick = () => {
+            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
+            window.location.href = '../rate/';
+        };
         grid.appendChild(card);
     });
 
-    containerSection.classList.remove('hidden');
-    containerSection.scrollIntoView({ behavior: 'smooth' });
+    if (containerSection) {
+        containerSection.classList.remove('hidden');
+        containerSection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 function updateSliders() {
-    const c = parseInt(document.getElementById('slider-content').value);
+    const cEl = document.getElementById('slider-content');
+    if (!cEl) return;
+    const c = parseInt(cEl.value);
     const ch = parseInt(document.getElementById('slider-characters').value);
     const v = parseInt(document.getElementById('slider-visuals').value);
     const a = parseInt(document.getElementById('slider-audio').value);
@@ -810,7 +827,10 @@ function setStrongPoint(pointName, element) {
 }
 
 function saveCurrentRating() {
-    if (!currentAnime) return;
+    if (!currentAnime) {
+        showToast('Сначала выберите тайтл через поиск!');
+        return;
+    }
 
     const c = parseInt(document.getElementById('slider-content').value);
     const ch = parseInt(document.getElementById('slider-characters').value);
@@ -844,12 +864,15 @@ function saveCurrentRating() {
 }
 
 function updateSavedCount() {
-    document.getElementById('saved-count-badge').innerText = savedRatings.length;
-    document.getElementById('drawer-subtitle').innerText = `${savedRatings.length} элементов`;
+    const badge = document.getElementById('saved-count-badge');
+    if (badge) badge.innerText = savedRatings.length;
+    const subtitle = document.getElementById('drawer-subtitle');
+    if (subtitle) subtitle.innerText = `${savedRatings.length} элементов`;
 }
 
 function toggleSavedDrawer() {
     const drawer = document.getElementById('saved-drawer');
+    if (!drawer) return;
     drawer.classList.toggle('hidden');
     if (!drawer.classList.contains('hidden')) {
         renderSavedList();
@@ -860,6 +883,7 @@ function switchDrawerTab(type) {
     currentDrawerTab = type;
     const btnAnime = document.getElementById('drawer-tab-anime');
     const btnManga = document.getElementById('drawer-tab-manga');
+    if (!btnAnime || !btnManga) return;
 
     if (type === 'ANIME') {
         btnAnime.className = 'flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622] transition';
@@ -874,6 +898,7 @@ function switchDrawerTab(type) {
 
 function renderSavedList() {
     const container = document.getElementById('saved-list-container');
+    if (!container) return;
     container.innerHTML = '';
 
     const filtered = savedRatings.filter(r => (r.type || 'ANIME') === currentDrawerTab);
@@ -940,6 +965,7 @@ function exportRatingsJson() {
 
 function showToast(message) {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     document.getElementById('toast-text').innerText = message;
     toast.classList.remove('opacity-0', 'pointer-events-none');
     toast.classList.add('opacity-100');
