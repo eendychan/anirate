@@ -27,13 +27,12 @@
     <header class="w-full bg-[#151F2E]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[#2A3A4E]/60 px-3 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div class="flex items-center gap-4">
-                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-80 transition flex items-center gap-1">
+                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-85 transition flex items-center gap-1">
                     Ani<span class="text-[#3DB4F2]">Rate</span>
                 </a>
                 <div class="hidden sm:flex items-center gap-3">
                     <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Главная</a>
                     <a href="./" class="text-xs font-bold text-[#3DB4F2] transition">Рандом</a>
-                    <a href="../rate/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Оценка</a>
                 </div>
             </div>
 
@@ -91,7 +90,6 @@
                             </div>
                         </div>
 
-                        <!-- Фильтр: Сезон года -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Сезон года</label>
                             <select id="rand-season" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
@@ -103,7 +101,6 @@
                             </select>
                         </div>
 
-                        <!-- Фильтр: Жанр -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Жанр</label>
                             <select id="rand-genre" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
@@ -125,7 +122,16 @@
                             </select>
                         </div>
 
-                        <!-- Фильтр: Количество серий -->
+                        <!-- Возвращенный фильтр: Оценка AniList (%) -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Оценка AniList (%)</label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="number" id="rand-score-min" placeholder="0" min="0" max="100" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2.5 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
+                                <span class="text-xs text-[#9FADBD]">—</span>
+                                <input type="number" id="rand-score-max" placeholder="100" min="0" max="100" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2.5 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
+                            </div>
+                        </div>
+
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Количество серий</label>
                             <select id="rand-episodes" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
@@ -139,7 +145,6 @@
                             </select>
                         </div>
 
-                        <!-- Фильтр: Формат -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Формат</label>
                             <select id="rand-format" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
@@ -152,7 +157,6 @@
                             </select>
                         </div>
 
-                        <!-- Фильтр: Статус -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Статус</label>
                             <select id="rand-status" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
