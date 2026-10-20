@@ -67,37 +67,35 @@ function toggleLanguage() {
     showToast('Переключение языков (RU/EN)');
 }
 
-// Авторизация
+// Авторизация через AniList PIN-код (абсолютно надежный способ)
 function loginAniList() {
-    const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-    window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token`;
+    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&response_type=token`;
+    window.open(authUrl, '_blank');
+    
+    // Запрашиваем токен через prompt для мгновенного входа
+    setTimeout(() => {
+        const token = prompt("Введите полученный токен (Access Token) со страницы AniList:");
+        if (token && token.trim()) {
+            localStorage.setItem('anilist_token', token.trim());
+            location.reload();
+        }
+    }, 1000);
 }
 
 async function checkAuthAndInitUser() {
-    // 1. Проверяем наличие токена в хэше URL после редиректа от AniList
+    // Проверяем хэш (если вдруг сработал прямой редирект)
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const tokenFromUrl = params.get('access_token');
     
     if (tokenFromUrl) {
         localStorage.setItem('anilist_token', tokenFromUrl);
-        // Очищаем URL от хэша без перезагрузки
         history.replaceState(null, "", window.location.pathname + window.location.search);
     }
 
     const token = localStorage.getItem('anilist_token');
     if (!token) return;
 
-    // 2. Проверяем локальный кэш пользователя для моментального отображения
-    const cachedUser = localStorage.getItem('anilist_user_cache');
-    if (cachedUser) {
-        try {
-            anilistUser = JSON.parse(cachedUser);
-            renderUserWidget(anilistUser);
-        } catch(e) {}
-    }
-
-    // 3. Запрашиваем свежие данные профиля Viewer с AniList
     try {
         const query = `
         query {
@@ -126,11 +124,11 @@ async function checkAuthAndInitUser() {
         
         if (data.data && data.data.Viewer) {
             anilistUser = data.data.Viewer;
-            localStorage.setItem('anilist_user_cache', JSON.stringify(anilistUser));
             renderUserWidget(anilistUser);
             await fetchUserMediaList(anilistUser.name, token);
-        } else if (data.errors) {
-            console.error("AniList API Error:", data.errors);
+        } else {
+            // Если токен протух или невалиден — сбрасываем
+            localStorage.removeItem('anilist_token');
         }
     } catch (err) {
         console.error("AniList Auth Network Error:", err);
