@@ -8,10 +8,8 @@ let currentWheelRotation = 0;
 let randomMediaType = 'ANIME';
 let currentDrawerTab = 'ANIME';
 
-// Инициализация общих элементов для всех страниц (поиск, счетчики, модалки)
 function initCommon() {
     updateSavedCount();
-
     const searchInput = document.getElementById('anime-search-input');
     if (searchInput) {
         let searchTimeout = null;
@@ -26,16 +24,14 @@ function initCommon() {
             }
 
             document.getElementById('search-loading').classList.remove('hidden');
-            searchTimeout = setTimeout(() => {
-                searchAllMedia(query);
-            }, 350);
+            searchTimeout = setTimeout(() => { searchAllMedia(query); }, 350);
         });
     }
 }
 
 function openSearchModal() {
     const modal = document.getElementById('search-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
     setTimeout(() => {
         const input = document.getElementById('anime-search-input');
         if (input) input.focus();
@@ -44,7 +40,7 @@ function openSearchModal() {
 
 function closeSearchModal() {
     const modal = document.getElementById('search-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
     const input = document.getElementById('anime-search-input');
     if (input) input.value = '';
     const res = document.getElementById('search-results');
@@ -68,13 +64,11 @@ async function searchAllMedia(queryStr) {
       anime: Page(perPage: 5) {
         media(search: $search, type: ANIME) {
           id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
         }
       }
       manga: Page(perPage: 5) {
         media(search: $search, type: MANGA) {
           id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description chapters volumes format source genres
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
         }
       }
     }
@@ -86,7 +80,6 @@ async function searchAllMedia(queryStr) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: query, variables: { search: queryStr } })
         });
-
         const data = await res.json();
         const loading = document.getElementById('search-loading');
         if (loading) loading.classList.add('hidden');
@@ -103,6 +96,7 @@ async function searchAllMedia(queryStr) {
 
 function renderSearchResults(animeList, mangaList) {
     const container = document.getElementById('search-results');
+    if (!container) return;
     container.innerHTML = '';
 
     if ((!animeList || animeList.length === 0) && (!mangaList || mangaList.length === 0)) {
@@ -138,15 +132,10 @@ function createSearchItemNode(media) {
     item.className = 'flex items-center gap-3 p-2 rounded-xl hover:bg-[#1E2C3D] cursor-pointer transition';
     item.onclick = () => {
         closeSearchModal();
-        // Если мы на главной, перенаправляем или сразу выбираем, но для страницы rate перенаправляем на /rate/ или активируем карточку
-        const path = window.location.pathname;
-        if (!path.includes('/rate/')) {
-            // Сохраняем выбранное аниме в sessionStorage и переходим на страницу rate
-            sessionStorage.setItem('selected_anime_temp', JSON.stringify(media));
-            window.location.href = '../rate/';
-        } else {
-            selectAnime(media);
-        }
+        sessionStorage.setItem('selected_anime_temp', JSON.stringify(media));
+        // Определяем правильный относительный путь до rate
+        const basePath = window.location.pathname.includes('/rate/') ? './' : (window.location.pathname.includes('/random/') ? '../rate/' : './rate/');
+        window.location.href = basePath;
     };
 
     item.innerHTML = `
@@ -159,7 +148,6 @@ function createSearchItemNode(media) {
     return item;
 }
 
-// Проверка при загрузке страницы rate, не передали ли аниме через sessionStorage
 document.addEventListener("DOMContentLoaded", () => {
     const cached = sessionStorage.getItem('selected_anime_temp');
     if (cached && document.getElementById('rating-card')) {
@@ -204,111 +192,6 @@ function selectAnime(anime) {
             });
         }
     }
-
-    renderRelations(anime.relations);
-}
-
-function renderRelations(relationsData) {
-    const container = document.getElementById('anime-relations');
-    if (!container) return;
-    const hoverTitle = document.getElementById('relation-hover-title');
-    container.innerHTML = '';
-    if (hoverTitle) hoverTitle.classList.add('hidden');
-
-    if (!relationsData || !relationsData.edges || relationsData.edges.length === 0) {
-        container.innerHTML = '<span class="text-[10px] text-[#9FADBD]/60 italic">Нет связанных тайтлов</span>';
-        return;
-    }
-
-    relationsData.edges.forEach(edge => {
-        if (!edge.node) return;
-        const node = edge.node;
-        const title = node.title.english || node.title.romaji;
-        const cover = node.coverImage.medium || node.coverImage.large;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'shrink-0 cursor-pointer group relative';
-        
-        if (hoverTitle) {
-            wrapper.onmouseenter = () => {
-                hoverTitle.innerText = title;
-                hoverTitle.classList.remove('hidden');
-            };
-            wrapper.onmouseleave = () => {
-                hoverTitle.classList.add('hidden');
-            };
-        }
-
-        wrapper.onclick = () => fetchMediaById(node.id, node.type);
-
-        wrapper.innerHTML = `
-            <div class="w-12 h-16 rounded overflow-hidden border border-[#2A3A4E] group-hover:border-[#3DB4F2] transition">
-                <img src="${cover}" class="w-full h-full object-cover pointer-events-none">
-            </div>
-        `;
-        container.appendChild(wrapper);
-    });
-}
-
-async function fetchMediaById(id, type) {
-    const query = `
-    query ($id: Int, $type: MediaType) {
-      Media(id: $id, type: $type) {
-        id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes chapters volumes seasonYear season format source genres
-        relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
-      }
-    }
-    `;
-
-    try {
-        const res = await fetch('https://graphql.anilist.co', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, variables: { id, type: type || 'ANIME' } })
-        });
-        const data = await res.json();
-        if (data.data && data.data.Media) {
-            selectAnime(data.data.Media);
-        }
-    } catch (err) {
-        console.error("Error fetching media by ID:", err);
-    }
-}
-
-function setupDragScroll() {
-    const slider = document.getElementById('anime-relations');
-    if (!slider) return;
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-
-    slider.addEventListener('mousedown', (e) => {
-        isDown = true;
-        slider.classList.add('drag-grabbing');
-        slider.classList.remove('drag-grab');
-        startX = e.pageX - slider.offsetLeft;
-        scrollLeft = slider.scrollLeft;
-    });
-
-    slider.addEventListener('mouseleave', () => {
-        isDown = false;
-        slider.classList.remove('drag-grabbing');
-        slider.classList.add('drag-grab');
-    });
-
-    slider.addEventListener('mouseup', () => {
-        isDown = false;
-        slider.classList.remove('drag-grabbing');
-        slider.classList.add('drag-grab');
-    });
-
-    slider.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - slider.offsetLeft;
-        const walk = (x - startX) * 1.8;
-        slider.scrollLeft = scrollLeft - walk;
-    });
 }
 
 function setup3DCardTilt() {
@@ -321,10 +204,8 @@ function setup3DCardTilt() {
         const rect = container.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -12;
-        const rotateY = ((x - centerX) / centerX) * 12;
+        const rotateX = ((y - rect.height/2) / (rect.height/2)) * -12;
+        const rotateY = ((x - rect.width/2) / (rect.width/2)) * 12;
 
         card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.04, 1.04, 1.04)`;
         glare.style.opacity = '1';
@@ -356,32 +237,12 @@ async function loadHomePageContent() {
     query ($season: MediaSeason, $seasonYear: Int) {
       seasonAnime: Page(perPage: 50) {
         media(type: ANIME, season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres nextAiringEpisode { episode airingAt } startDate { year month day }
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
+          id type title { english romaji native } coverImage { extraLarge large medium } bannerImage description episodes seasonYear season format source genres
         }
       }
       trendingAnime: Page(perPage: 6) {
         media(type: ANIME, sort: TRENDING_DESC) {
           id type title { english romaji native } coverImage { large medium } seasonYear format
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
-        }
-      }
-      trendingManga: Page(perPage: 6) {
-        media(type: MANGA, sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } chapters format
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
-        }
-      }
-      hentaiAnime: Page(perPage: 6) {
-        media(type: ANIME, genre: "Hentai", sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } seasonYear format
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
-        }
-      }
-      hentaiManga: Page(perPage: 6) {
-        media(type: MANGA, genre: "Hentai", sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } chapters format
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
         }
       }
     }
@@ -400,109 +261,59 @@ async function loadHomePageContent() {
                 setupHeroCarousel(seasonObj.nameRu);
             }
             if (data.data.trendingAnime) renderCardsGrid('trending-grid', data.data.trendingAnime.media, false);
-            if (data.data.trendingManga) renderCardsGrid('manga-trending-grid', data.data.trendingManga.media, true);
-            if (data.data.hentaiAnime) renderHentaiGrid('hentai-anime-grid', data.data.hentaiAnime.media, false);
-            if (data.data.hentaiManga) renderHentaiGrid('hentai-manga-grid', data.data.hentaiManga.media, true);
         }
     } catch (err) {
-        console.error("Home page loading error:", err);
+        console.error("Home loading error:", err);
     }
-
-    loadGenreAnime('Action');
-    loadGenreManga('Action');
 }
 
 function setupHeroCarousel(seasonName) {
     if (!heroList || heroList.length === 0) return;
     heroIndex = 0;
-    const slider = document.getElementById('hero-roulette-slider');
-    if (slider) {
-        slider.max = heroList.length;
-        slider.value = 1;
-    }
     renderHeroSlide(heroIndex, seasonName);
     restartHeroTimer();
-}
-
-function onRouletteSlide(val) {
-    const idx = parseInt(val) - 1;
-    if (idx >= 0 && idx < heroList.length) {
-        heroIndex = idx;
-        const seasonObj = getCurrentSeasonObj();
-        renderHeroSlide(heroIndex, seasonObj.nameRu);
-        restartHeroTimer();
-    }
 }
 
 function nextHeroSlide() {
     if (heroList.length === 0) return;
     heroIndex = (heroIndex + 1) % heroList.length;
-    const seasonObj = getCurrentSeasonObj();
-    renderHeroSlide(heroIndex, seasonObj.nameRu);
+    renderHeroSlide(heroIndex, getCurrentSeasonObj().nameRu);
     restartHeroTimer();
 }
 
 function prevHeroSlide() {
     if (heroList.length === 0) return;
     heroIndex = (heroIndex - 1 + heroList.length) % heroList.length;
-    const seasonObj = getCurrentSeasonObj();
-    renderHeroSlide(heroIndex, seasonObj.nameRu);
+    renderHeroSlide(heroIndex, getCurrentSeasonObj().nameRu);
     restartHeroTimer();
 }
 
 function renderHeroSlide(idx, seasonName) {
     const anime = heroList[idx];
     if (!anime) return;
-
     const bgLayer = document.getElementById('hero-bg-layer');
     if (!bgLayer) return;
-    const title = anime.title.english || anime.title.romaji;
-    const bgImage = anime.bannerImage || anime.coverImage.extraLarge || anime.coverImage.large;
 
     bgLayer.classList.remove('hero-slide-fade-in');
     bgLayer.classList.add('hero-slide-fade-out');
 
     setTimeout(() => {
-        bgLayer.style.backgroundImage = `url('${bgImage}')`;
-        document.getElementById('hero-title').innerText = title;
-        document.getElementById('hero-season-badge').innerText = seasonName || 'Сезон';
+        bgLayer.style.backgroundImage = `url('${anime.bannerImage || anime.coverImage.extraLarge}')`;
+        document.getElementById('hero-title').innerText = anime.title.english || anime.title.romaji;
+        document.getElementById('hero-season-badge').innerText = seasonName;
         document.getElementById('hero-genre').innerText = anime.genres ? anime.genres.slice(0, 2).join(' • ') : 'Аниме';
-        
-        const totalEp = anime.episodes ? anime.episodes : '?';
-        let currentEp = totalEp;
-        if (anime.nextAiringEpisode && anime.nextAiringEpisode.episode) {
-            currentEp = anime.nextAiringEpisode.episode - 1;
-        }
-        document.getElementById('hero-episodes-progress').innerText = `Вышло: ${currentEp} / ${totalEp} эп.`;
-
-        if (anime.startDate && anime.startDate.day && anime.startDate.month) {
-            const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-            document.getElementById('hero-release-date').innerText = `Старт: ${anime.startDate.day} ${months[anime.startDate.month - 1]} ${anime.startDate.year || ''}`;
-        } else {
-            document.getElementById('hero-release-date').innerText = 'Старт: Скоро';
-        }
-
-        let desc = anime.description || 'Описание отсутствует';
-        desc = desc.replace(/<[^>]*>?/gm, '');
-        document.getElementById('hero-desc').innerText = desc;
+        document.getElementById('hero-desc').innerText = (anime.description || '').replace(/<[^>]*>?/gm, '');
 
         const rateBtn = document.getElementById('hero-rate-btn');
         if (rateBtn) {
-            rateBtn.onclick = (e) => {
-                triggerBouncyAnimation(rateBtn);
+            rateBtn.onclick = () => {
                 sessionStorage.setItem('selected_anime_temp', JSON.stringify(anime));
                 window.location.href = './rate/';
             };
         }
-
         bgLayer.classList.remove('hero-slide-fade-out');
         bgLayer.classList.add('hero-slide-fade-in');
     }, 250);
-
-    const counter = document.getElementById('hero-roulette-counter');
-    if (counter) counter.innerText = `${idx + 1} / ${heroList.length}`;
-    const slider = document.getElementById('hero-roulette-slider');
-    if (slider) slider.value = idx + 1;
 }
 
 function restartHeroTimer() {
@@ -510,149 +321,36 @@ function restartHeroTimer() {
     heroTimer = setInterval(() => {
         if (heroList.length > 0) {
             heroIndex = (heroIndex + 1) % heroList.length;
-            const seasonObj = getCurrentSeasonObj();
-            renderHeroSlide(heroIndex, seasonObj.nameRu);
+            renderHeroSlide(heroIndex, getCurrentSeasonObj().nameRu);
         }
     }, 6000);
 }
 
-function renderCardsGrid(containerId, list, isManga = false) {
+function renderCardsGrid(containerId, list) {
     const grid = document.getElementById(containerId);
     if (!grid) return;
     grid.innerHTML = '';
 
     list.forEach(item => {
-        const title = item.title.english || item.title.romaji;
-        const cover = item.coverImage.large || item.coverImage.medium;
-        const subText = isManga 
-            ? (item.chapters ? `${item.chapters} гл.` : 'Манга')
-            : `${item.seasonYear || ''} ${item.format || ''}`;
-
         const card = document.createElement('div');
-        card.className = 'bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-[#3DB4F2] transition group cursor-pointer flex flex-col justify-between shadow-md';
+        card.className = 'bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-[#3DB4F2] transition group cursor-pointer shadow-md';
         card.onclick = () => {
             sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
-            window.location.href = './rate/';
+            const basePath = window.location.pathname.includes('/rate/') ? './' : './rate/';
+            window.location.href = basePath;
         };
 
-        const coverClass = isManga ? 'manga-book-cover' : '';
-
         card.innerHTML = `
-            <div class="relative overflow-hidden aspect-[3/4] ${coverClass}">
-                <img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            <div class="relative overflow-hidden aspect-[3/4]">
+                <img src="${item.coverImage.large}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
             </div>
             <div class="p-2 space-y-1">
-                <h4 class="text-xs font-bold text-white truncate leading-snug group-hover:text-[#3DB4F2] transition">${title}</h4>
-                <p class="text-[10px] text-[#9FADBD]">${subText}</p>
+                <h4 class="text-xs font-bold text-white truncate group-hover:text-[#3DB4F2]">${item.title.english || item.title.romaji}</h4>
+                <p class="text-[10px] text-[#9FADBD]">${item.seasonYear || ''} ${item.format || ''}</p>
             </div>
         `;
         grid.appendChild(card);
     });
-}
-
-function renderHentaiGrid(containerId, list, isManga = false) {
-    const grid = document.getElementById(containerId);
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    list.forEach(item => {
-        const title = item.title.english || item.title.romaji;
-        const cover = item.coverImage.large || item.coverImage.medium;
-
-        const card = document.createElement('div');
-        card.className = 'nsfw-card bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-rose-500/80 transition group cursor-pointer flex flex-col justify-between shadow-md relative';
-        card.onclick = () => {
-            sessionStorage.setItem('selected_anime_temp', JSON.stringify(item));
-            window.location.href = './rate/';
-        };
-
-        const coverClass = isManga ? 'manga-book-cover' : '';
-
-        card.innerHTML = `
-            <div class="relative overflow-hidden aspect-[3/4] ${coverClass}">
-                <img src="${cover}" class="w-full h-full object-cover">
-                <div class="nsfw-mask absolute inset-0 bg-[#0B1622]/80 flex flex-col items-center justify-center p-2 text-center z-20">
-                    <span class="px-2 py-0.5 rounded bg-rose-600 text-white font-rubik-black text-[10px] shadow">18+</span>
-                    <span class="text-[9px] text-white/90 font-bold mt-1">Наведите для просмотра</span>
-                </div>
-            </div>
-            <div class="p-2 space-y-1">
-                <h4 class="text-xs font-bold text-white truncate leading-snug group-hover:text-rose-400 transition">${title}</h4>
-                <p class="text-[10px] text-[#9FADBD]">${isManga ? 'Хентай-манга' : '18+ Аниме'}</p>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-}
-
-async function loadGenreAnime(genre, btnElem) {
-    if (btnElem) {
-        triggerBouncyAnimation(btnElem);
-        document.querySelectorAll('.genre-tab-btn').forEach(btn => {
-            btn.className = 'bouncy-chip genre-tab-btn px-3 py-1.5 rounded-xl bg-[#151F2E] border border-[#2A3A4E] text-[#9FADBD] hover:border-[#3DB4F2]/50 text-xs font-bold shrink-0 transition';
-        });
-        btnElem.className = 'bouncy-chip genre-tab-btn px-3 py-1.5 rounded-xl bg-[#3DB4F2]/20 border border-[#3DB4F2] text-[#3DB4F2] text-xs font-bold shrink-0 transition';
-    }
-
-    const query = `
-    query ($genre: String) {
-      Page(perPage: 6) {
-        media(type: ANIME, genre: $genre, sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } episodes seasonYear format source genres
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
-        }
-      }
-    }
-    `;
-
-    try {
-        const res = await fetch('https://graphql.anilist.co', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, variables: { genre } })
-        });
-        const data = await res.json();
-        if (data.data && data.data.Page) {
-            renderCardsGrid('genre-grid', data.data.Page.media, false);
-        }
-    } catch (err) {
-        console.error("Genre anime loading error:", err);
-    }
-}
-
-async function loadGenreManga(genre, btnElem) {
-    if (btnElem) {
-        triggerBouncyAnimation(btnElem);
-        document.querySelectorAll('.manga-genre-tab-btn').forEach(btn => {
-            btn.className = 'bouncy-chip manga-genre-tab-btn px-3 py-1.5 rounded-xl bg-[#151F2E] border border-[#2A3A4E] text-[#9FADBD] hover:border-[#3DB4F2]/50 text-xs font-bold shrink-0 transition';
-        });
-        btnElem.className = 'bouncy-chip manga-genre-tab-btn px-3 py-1.5 rounded-xl bg-[#3DB4F2]/20 border border-[#3DB4F2] text-[#3DB4F2] text-xs font-bold shrink-0 transition';
-    }
-
-    const query = `
-    query ($genre: String) {
-      Page(perPage: 6) {
-        media(type: MANGA, genre: $genre, sort: POPULARITY_DESC) {
-          id type title { english romaji native } coverImage { large medium } chapters format source genres
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
-        }
-      }
-    }
-    `;
-
-    try {
-        const res = await fetch('https://graphql.anilist.co', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, variables: { genre } })
-        });
-        const data = await res.json();
-        if (data.data && data.data.Page) {
-            renderCardsGrid('manga-genre-grid', data.data.Page.media, true);
-        }
-    } catch (err) {
-        console.error("Genre manga loading error:", err);
-    }
 }
 
 function setRandomMediaType(type) {
@@ -670,6 +368,7 @@ function setRandomMediaType(type) {
     }
 }
 
+// Выполнение рандома с новыми фильтрами
 async function executeRandomRoll(btn) {
     triggerBouncyAnimation(btn);
 
@@ -679,34 +378,29 @@ async function executeRandomRoll(btn) {
 
     const yearStart = parseInt(document.getElementById('rand-year-start').value) || null;
     const yearEnd = parseInt(document.getElementById('rand-year-end').value) || null;
+    const season = document.getElementById('rand-season').value || null;
     const genre = document.getElementById('rand-genre').value || null;
-    const scoreMin = parseInt(document.getElementById('rand-score-min').value);
-    const scoreMax = parseInt(document.getElementById('rand-score-max').value);
+    const epRange = document.getElementById('rand-episodes').value;
+    const format = document.getElementById('rand-format').value || null;
+    const status = document.getElementById('rand-status').value || null;
     const count = parseInt(document.getElementById('rand-count').value) || 1;
 
-    const hasNarrowFilter = !!(yearStart || yearEnd || !isNaN(scoreMin) || !isNaN(scoreMax) || genre);
-
-    let variables = {
-        page: hasNarrowFilter ? 1 : Math.floor(Math.random() * 8) + 1,
-        perPage: 50,
-        type: randomMediaType
-    };
-
+    let variables = { page: 1, perPage: 50, type: randomMediaType };
     let queryArgs = ['$page: Int', '$perPage: Int', '$type: MediaType'];
     let mediaArgs = ['type: $type', 'sort: POPULARITY_DESC'];
 
     if (genre) { queryArgs.push('$genre: String'); mediaArgs.push('genre:$genre'); variables.genre = genre; }
-    if (yearStart) { queryArgs.push('$yearStart: Int'); mediaArgs.push('startDate_greater:$yearStart'); variables.yearStart = yearStart * 10000; }
-    if (yearEnd) { queryArgs.push('$yearEnd: Int'); mediaArgs.push('startDate_lesser:$yearEnd'); variables.yearEnd = (yearEnd + 1) * 10000; }
-    if (!isNaN(scoreMin)) { queryArgs.push('$scoreMin: Int'); mediaArgs.push('averageScore_greater:$scoreMin'); variables.scoreMin = scoreMin - 1; }
-    if (!isNaN(scoreMax)) { queryArgs.push('$scoreMax: Int'); mediaArgs.push('averageScore_lesser:$scoreMax'); variables.scoreMax = scoreMax + 1; }
+    if (format) { queryArgs.push('$format: MediaFormat'); mediaArgs.push('format:$format'); variables.format = format; }
+    if (status) { queryArgs.push('$status: MediaStatus'); mediaArgs.push('status:$status'); variables.status = status; }
+    if (season) { queryArgs.push('$season: MediaSeason'); mediaArgs.push('season:$season'); variables.season = season; }
+    if (yearStart) { queryArgs.push('$yearStart: Int'); mediaArgs.push('seasonYear_greater:$yearStart'); variables.yearStart = yearStart - 1; }
+    if (yearEnd) { queryArgs.push('$yearEnd: Int'); mediaArgs.push('seasonYear_lesser:$yearEnd'); variables.yearEnd = yearEnd + 1; }
 
     const query = `
     query (${queryArgs.join(', ')}) {
       Page(page: $page, perPage: $perPage) {
         media(${mediaArgs.join(', ')}) {
-          id type title { english romaji native } coverImage { extraLarge large medium } description episodes chapters seasonYear format source genres averageScore
-          relations { edges { relationType node { id type title { english romaji } coverImage { medium large } } } }
+          id type title { english romaji native } coverImage { large medium } description episodes chapters seasonYear format source genres averageScore
         }
       }
     }
@@ -718,16 +412,24 @@ async function executeRandomRoll(btn) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query, variables })
         });
-
         const data = await res.json();
+        
         if (data.data && data.data.Page && data.data.Page.media) {
-            let list = data.data.Page.media;
-            list.sort(() => Math.random() - 0.5);
-            const selectedList = list.slice(0, count);
+            let filtered = data.data.Page.media.filter(a => {
+                const eps = a.episodes || 0;
+                if (epRange === '10-' && eps > 10) return false;
+                if (epRange === '10+' && eps < 10) return false;
+                if (epRange === '20+' && eps < 20) return false;
+                if (epRange === '40+' && eps < 40) return false;
+                if (epRange === '50+' && eps < 50) return false;
+                if (epRange === '100+' && eps < 100) return false;
+                return true;
+            });
 
-            setTimeout(() => {
-                renderRandomResults(selectedList);
-            }, 1200);
+            filtered.sort(() => Math.random() - 0.5);
+            const selectedList = filtered.slice(0, count);
+
+            setTimeout(() => { renderRandomResults(selectedList); }, 1200);
         }
     } catch (err) {
         console.error("Random Roll Error:", err);
@@ -748,26 +450,15 @@ function renderRandomResults(list) {
     }
 
     list.forEach(item => {
-        const title = item.title.english || item.title.romaji;
-        const cover = item.coverImage.large || item.coverImage.medium;
-        const sub = item.type === 'MANGA'
-            ? (item.chapters ? `${item.chapters} гл.` : 'Манга')
-            : `${item.seasonYear || ''} • ${item.episodes || '?'} сер.`;
-
         const card = document.createElement('div');
         card.className = 'bg-[#151F2E] rounded-xl overflow-hidden border border-[#2A3A4E] hover:border-[#3DB4F2] transition p-2.5 flex items-center gap-3 shadow-md';
         
         card.innerHTML = `
-            <img src="${cover}" class="w-16 h-22 object-cover rounded-lg shrink-0 shadow">
+            <img src="${item.coverImage.large}" class="w-16 h-22 object-cover rounded-lg shrink-0 shadow">
             <div class="flex-1 min-w-0 space-y-1">
-                <h4 class="text-xs font-bold text-white truncate">${title}</h4>
-                <p class="text-[10px] text-[#9FADBD]">${sub}</p>
-                <div class="flex items-center gap-1">
-                    <span class="px-1.5 py-0.5 rounded bg-[#3DB4F2]/10 text-[#3DB4F2] text-[9px] font-bold">${item.averageScore || 0}% ★</span>
-                </div>
-                <button class="bouncy-chip mt-1 px-3 py-1 rounded-lg bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-bold text-[10px] transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-xs">star</span> Оценить
-                </button>
+                <h4 class="text-xs font-bold text-white truncate">${item.title.english || item.title.romaji}</h4>
+                <p class="text-[10px] text-[#9FADBD]">${item.seasonYear || ''} • ${item.episodes || '?'} сер.</p>
+                <button class="bouncy-chip mt-1 px-3 py-1 rounded-lg bg-[#3DB4F2] text-[#0B1622] font-bold text-[10px] transition">Оценить</button>
             </div>
         `;
 
@@ -800,8 +491,7 @@ function updateSliders() {
     document.getElementById('val-aftertaste').innerText = af;
 
     const sum = c + ch + v + a + af;
-    const score90 = Math.round((sum / 50) * 90);
-    document.getElementById('score-90-value').innerText = score90;
+    document.getElementById('score-90-value').innerText = Math.round((sum / 50) * 90);
 }
 
 function triggerBouncyAnimation(elem) {
@@ -814,7 +504,6 @@ function triggerBouncyAnimation(elem) {
 function setStrongPoint(pointName, element) {
     selectedStrongPoint = pointName;
     document.querySelectorAll('.strong-chip').forEach(btn => {
-        btn.classList.remove('cartoon-squish');
         if (btn.getAttribute('data-key') === pointName) {
             btn.classList.add('bg-[#3DB4F2]/20', 'text-[#3DB4F2]', 'border-[#3DB4F2]');
             btn.classList.remove('bg-[#0B1622]/40', 'text-[#9FADBD]', 'border-[#2A3A4E]');
@@ -838,7 +527,6 @@ function saveCurrentRating() {
     const a = parseInt(document.getElementById('slider-audio').value);
     const af = parseInt(document.getElementById('slider-aftertaste').value);
     const sum = c + ch + v + a + af;
-    const score90 = Math.round((sum / 50) * 90);
 
     const ratingRecord = {
         id: currentAnime.id,
@@ -847,16 +535,13 @@ function saveCurrentRating() {
         cover: (currentAnime.coverImage && (currentAnime.coverImage.medium || currentAnime.coverImage.large)) || '',
         sliders: { content: c, characters: ch, visuals: v, audio: a, aftertaste: af },
         strongPoint: selectedStrongPoint,
-        score90: score90,
+        score90: Math.round((sum / 50) * 90),
         date: new Date().toLocaleDateString()
     };
 
     const existingIndex = savedRatings.findIndex(r => r.id === currentAnime.id && r.type === ratingRecord.type);
-    if (existingIndex >= 0) {
-        savedRatings[existingIndex] = ratingRecord;
-    } else {
-        savedRatings.unshift(ratingRecord);
-    }
+    if (existingIndex >= 0) savedRatings[existingIndex] = ratingRecord;
+    else savedRatings.unshift(ratingRecord);
 
     localStorage.setItem('anirate_saved_ratings', JSON.stringify(savedRatings));
     updateSavedCount();
@@ -874,9 +559,7 @@ function toggleSavedDrawer() {
     const drawer = document.getElementById('saved-drawer');
     if (!drawer) return;
     drawer.classList.toggle('hidden');
-    if (!drawer.classList.contains('hidden')) {
-        renderSavedList();
-    }
+    if (!drawer.classList.contains('hidden')) renderSavedList();
 }
 
 function switchDrawerTab(type) {
@@ -886,13 +569,12 @@ function switchDrawerTab(type) {
     if (!btnAnime || !btnManga) return;
 
     if (type === 'ANIME') {
-        btnAnime.className = 'flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622] transition';
-        btnManga.className = 'flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD] hover:text-white transition';
+        btnAnime.className = 'flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622]';
+        btnManga.className = 'flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD]';
     } else {
-        btnManga.className = 'flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622] transition';
-        btnAnime.className = 'flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD] hover:text-white transition';
+        btnManga.className = 'flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622]';
+        btnAnime.className = 'flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD]';
     }
-
     renderSavedList();
 }
 
@@ -902,14 +584,8 @@ function renderSavedList() {
     container.innerHTML = '';
 
     const filtered = savedRatings.filter(r => (r.type || 'ANIME') === currentDrawerTab);
-
     if (filtered.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-10 text-[#9FADBD] space-y-1">
-                <span class="material-symbols-outlined text-3xl">bookmark_border</span>
-                <p class="text-xs">Список ${currentDrawerTab === 'ANIME' ? 'анимированных' : 'манга'} оценок пуст</p>
-            </div>
-        `;
+        container.innerHTML = `<div class="text-center py-10 text-[#9FADBD] text-xs">Список пуст</div>`;
         return;
     }
 
@@ -926,7 +602,7 @@ function renderSavedList() {
                     <span class="text-[10px] text-[#9FADBD]">(${item.strongPoint})</span>
                 </div>
             </div>
-            <button onclick="removeSavedRating(${originalIndex})" class="w-7 h-7 rounded-lg hover:bg-red-500/20 text-[#9FADBD] hover:text-red-400 flex items-center justify-center transition">
+            <button onclick="removeSavedRating(${originalIndex})" class="w-7 h-7 rounded-lg hover:bg-red-500/20 text-[#9FADBD] flex items-center justify-center">
                 <span class="material-symbols-outlined text-base">delete</span>
             </button>
         `;
