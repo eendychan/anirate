@@ -119,52 +119,10 @@
                             <span class="material-symbols-outlined text-sm text-[#3DB4F2]">tune</span>
                             <h4 class="text-[10px] font-bold tracking-wider">Критерии качества</h4>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <!-- Содержание -->
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка сюжета, повествования и/или темпа">
-                                <div class="flex justify-between items-center text-xs font-bold">
-                                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">auto_stories</span>Содержание</span>
-                                    <span id="val-content" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
-                                </div>
-                                <input type="range" id="slider-content" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
-                                <p class="text-[9px] text-[#9FADBD] italic">Оценка сюжета, повествования и/или темпа</p>
-                            </div>
-                            <!-- Персонажи -->
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка проработки, развития и/или химии">
-                                <div class="flex justify-between items-center text-xs font-bold">
-                                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">group</span>Персонажи</span>
-                                    <span id="val-characters" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
-                                </div>
-                                <input type="range" id="slider-characters" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
-                                <p class="text-[9px] text-[#9FADBD] italic">Оценка проработки, развития и/или химии</p>
-                            </div>
-                            <!-- Визуал -->
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка рисовки, анимации и/или стиля">
-                                <div class="flex justify-between items-center text-xs font-bold">
-                                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">palette</span>Визуал</span>
-                                    <span id="val-visuals" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
-                                </div>
-                                <input type="range" id="slider-visuals" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
-                                <p class="text-[9px] text-[#9FADBD] italic">Оценка рисовки, анимации и/или стиля</p>
-                            </div>
-                            <!-- Звучок -->
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка музыкального сопровождения и OST (по желанию и озвучки)">
-                                <div class="flex justify-between items-center text-xs font-bold">
-                                    <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">music_note</span>Звучок</span>
-                                    <span id="val-audio" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
-                                </div>
-                                <input type="range" id="slider-audio" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
-                                <p class="text-[9px] text-[#9FADBD] italic">Оценка музыки и OST (по желанию и озвучки)</p>
-                            </div>
-                        </div>
-                        <!-- Послевкусие -->
-                        <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Насколько зацепило, вызвало ли эмоции и/или хочется ли вернуться?">
-                            <div class="flex justify-between items-center text-xs font-bold">
-                                <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">psychology</span>Послевкусие</span>
-                                <span id="val-aftertaste" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
-                            </div>
-                            <input type="range" id="slider-aftertaste" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
-                            <p class="text-[9px] text-[#9FADBD] italic">Насколько зацепило, эмоции и/или хочется ли вернуться?</p>
+                        
+                        <!-- Динамический контейнер критериев -->
+                        <div id="criteria-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <!-- Будет заполнено через JS в зависимости от типа (Аниме / Манга) -->
                         </div>
                     </div>
 
@@ -174,10 +132,7 @@
                             <h4 class="text-[10px] font-bold tracking-wider">Сильная сторона</h4>
                         </div>
                         <div id="strong-point-chips" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                            <button type="button" onclick="setStrongPoint('Содержание', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Содержание">Содержание</button>
-                            <button type="button" onclick="setStrongPoint('Персонажи', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Персонажи">Персонажи</button>
-                            <button type="button" onclick="setStrongPoint('Визуал', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Визуал">Визуал</button>
-                            <button type="button" onclick="setStrongPoint('Звучок', this)" class="bouncy-chip strong-chip p-1.5 rounded-lg text-xs font-bold border border-[#2A3A4E] bg-[#0B1622]/40 text-[#9FADBD] transition text-center" data-key="Звучок">Звучок</button>
+                            <!-- Динамические кнопки сильных сторон -->
                         </div>
                     </div>
 
@@ -235,10 +190,12 @@
     <script>
         window.onload = function() {
             initCommon();
-            setStrongPoint('Содержание');
             setupDragScroll();
             setup3DCardTilt();
-            updateSliders();
+            if (!currentAnime) {
+                // Дефолт (аниме по умолчанию при пустом выборе)
+                selectAnime({ type: 'ANIME', title: { romaji: 'Выберите тайтл' }, coverImage: {}, genres: [] });
+            }
         };
     </script>
 </body>
