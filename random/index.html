@@ -60,13 +60,14 @@
                     <button id="rand-type-manga" onclick="setRandomMediaType('MANGA')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-[#9FADBD] hover:text-white transition">Манга</button>
                 </div>
 
-                <div class="wheel-container relative w-56 h-28 flex items-end justify-center overflow-hidden my-2">
-                    <div id="half-wheel-disc" class="half-wheel absolute -bottom-28 w-56 h-56 rounded-full border-2 border-[#2A3A4E] bg-[#0B1622] shadow-xl flex items-center justify-center">
-                        <div class="w-44 h-44 rounded-full border border-dashed border-[#3DB4F2]/30 flex items-center justify-center relative">
-                            <div class="w-2 h-2 rounded-full bg-[#3DB4F2]"></div>
+                <!-- Новое стилизованное неоновое колесо рулетки -->
+                <div class="wheel-container relative w-48 h-48 flex items-center justify-center overflow-hidden my-2">
+                    <div id="half-wheel-disc" class="neon-wheel absolute w-44 h-44 rounded-full border-4 border-[#3DB4F2]/60 shadow-2xl flex items-center justify-center">
+                        <div class="w-16 h-16 rounded-full bg-[#0B1622] border-2 border-[#3DB4F2] flex items-center justify-center shadow-inner">
+                            <span class="material-symbols-outlined text-[#3DB4F2] text-xl animate-spin" style="animation-duration: 6s;">settings</span>
                         </div>
                     </div>
-                    <div class="absolute top-0 w-3 h-3 bg-[#3DB4F2] rotate-45 rounded-sm shadow-md z-10 border border-[#0B1622]"></div>
+                    <div class="absolute -top-1 w-4 h-4 bg-[#3DB4F2] rotate-45 rounded-sm shadow-lg z-10 border-2 border-[#0B1622]"></div>
                 </div>
 
                 <button id="roll-btn" onclick="executeRandomRoll(this)" class="bouncy-chip px-8 py-3 rounded-xl bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-rubik-black text-sm tracking-wide transition shadow-lg flex items-center gap-2">
@@ -122,7 +123,6 @@
                             </select>
                         </div>
 
-                        <!-- Возвращенный фильтр: Оценка AniList (%) -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Оценка AniList (%)</label>
                             <div class="flex items-center gap-1.5">
@@ -195,8 +195,6 @@
     </footer>
 
     <script src="../script.js"></script>
-    <script>
-        window.onload = function() { initCommon(); };
-    </script>
+    <script> window.onload = function() { initCommon(); }; </script>
 </body>
 </html>
