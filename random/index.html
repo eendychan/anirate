@@ -10,9 +10,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        anilist: { bg: '#0B1622', card: '#151F2E', border: '#2A3A4E', accent: '#3DB4F2', text: '#EDF1F5', muted: '#9FADBD' }
-                    },
+                    colors: { anilist: { bg: '#0B1622', card: '#151F2E', border: '#2A3A4E', accent: '#3DB4F2', text: '#EDF1F5', muted: '#9FADBD' } },
                     fontFamily: { rubik: ['Rubik', 'sans-serif'] }
                 }
             }
@@ -22,7 +20,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <!-- Обратите внимание: путь к стилю ведет на уровень выше -->
     <link rel="stylesheet" href="../style.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-sky-500/30 selection:text-sky-300">
@@ -30,12 +27,13 @@
     <header class="w-full bg-[#151F2E]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[#2A3A4E]/60 px-3 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div class="flex items-center gap-4">
-                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-80 transition cursor-pointer flex items-center gap-1">
+                <a href="../" class="font-rubik-black text-lg tracking-wide text-white hover:opacity-80 transition flex items-center gap-1">
                     Ani<span class="text-[#3DB4F2]">Rate</span>
                 </a>
                 <div class="hidden sm:flex items-center gap-3">
-                    <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition cursor-pointer">Главная</a>
-                    <a href="./" class="text-xs font-bold text-[#3DB4F2] transition cursor-pointer">Рандом</a>
+                    <a href="../" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Главная</a>
+                    <a href="./" class="text-xs font-bold text-[#3DB4F2] transition">Рандом</a>
+                    <a href="../rate/" class="text-xs font-bold text-[#EDF1F5] hover:text-[#3DB4F2] transition">Оценка</a>
                 </div>
             </div>
 
@@ -67,19 +65,16 @@
                     <div id="half-wheel-disc" class="half-wheel absolute -bottom-28 w-56 h-56 rounded-full border-2 border-[#2A3A4E] bg-[#0B1622] shadow-xl flex items-center justify-center">
                         <div class="w-44 h-44 rounded-full border border-dashed border-[#3DB4F2]/30 flex items-center justify-center relative">
                             <div class="w-2 h-2 rounded-full bg-[#3DB4F2]"></div>
-                            <div class="absolute top-2 w-1 h-3 bg-[#3DB4F2]/60 rounded-full"></div>
-                            <div class="absolute bottom-2 w-1 h-3 bg-[#3DB4F2]/60 rounded-full"></div>
-                            <div class="absolute left-2 w-3 h-1 bg-[#3DB4F2]/60 rounded-full"></div>
-                            <div class="absolute right-2 w-3 h-1 bg-[#3DB4F2]/60 rounded-full"></div>
                         </div>
                     </div>
                     <div class="absolute top-0 w-3 h-3 bg-[#3DB4F2] rotate-45 rounded-sm shadow-md z-10 border border-[#0B1622]"></div>
                 </div>
 
-                <button id="roll-btn" onclick="executeRandomRoll(this)" class="bouncy-chip px-8 py-3 rounded-xl bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-rubik-black text-sm tracking-wide transition shadow-lg shadow-[#3DB4F2]/25 flex items-center gap-2">
+                <button id="roll-btn" onclick="executeRandomRoll(this)" class="bouncy-chip px-8 py-3 rounded-xl bg-[#3DB4F2] hover:bg-[#02A9FF] text-[#0B1622] font-rubik-black text-sm tracking-wide transition shadow-lg flex items-center gap-2">
                     Крутить колесо
                 </button>
 
+                <!-- Фильтры рандома -->
                 <div class="w-full bg-[#0B1622]/60 rounded-xl p-4 border border-[#2A3A4E]/70 space-y-4 text-left">
                     <div class="flex items-center gap-1.5 border-b border-[#2A3A4E] pb-2 text-[#9FADBD]">
                         <span class="material-symbols-outlined text-sm text-[#3DB4F2]">tune</span>
@@ -96,6 +91,19 @@
                             </div>
                         </div>
 
+                        <!-- Фильтр: Сезон года -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Сезон года</label>
+                            <select id="rand-season" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
+                                <option value="">Любой</option>
+                                <option value="WINTER">Зима</option>
+                                <option value="SPRING">Весна</option>
+                                <option value="SUMMER">Лето</option>
+                                <option value="FALL">Осень</option>
+                            </select>
+                        </div>
+
+                        <!-- Фильтр: Жанр -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Жанр</label>
                             <select id="rand-genre" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
@@ -117,13 +125,41 @@
                             </select>
                         </div>
 
+                        <!-- Фильтр: Количество серий -->
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Оценка AniList (%)</label>
-                            <div class="flex items-center gap-1.5">
-                                <input type="number" id="rand-score-min" placeholder="0" min="0" max="100" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2.5 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
-                                <span class="text-xs text-[#9FADBD]">—</span>
-                                <input type="number" id="rand-score-max" placeholder="100" min="0" max="100" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2.5 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
-                            </div>
+                            <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Количество серий</label>
+                            <select id="rand-episodes" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
+                                <option value="ANY">Любое</option>
+                                <option value="10-">До 10 серий (10-)</option>
+                                <option value="10+">От 10 серий (10+)</option>
+                                <option value="20+">От 20 серий (20+)</option>
+                                <option value="40+">От 40 серий (40+)</option>
+                                <option value="50+">От 50 серий (50+)</option>
+                                <option value="100+">От 100 серий (100+)</option>
+                            </select>
+                        </div>
+
+                        <!-- Фильтр: Формат -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Формат</label>
+                            <select id="rand-format" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
+                                <option value="">Любой</option>
+                                <option value="TV">TV</option>
+                                <option value="MOVIE">Фильм</option>
+                                <option value="OVA">OVA</option>
+                                <option value="ONA">ONA</option>
+                                <option value="SPECIAL">Спешл</option>
+                            </select>
+                        </div>
+
+                        <!-- Фильтр: Статус -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-[#9FADBD] uppercase tracking-wider">Статус</label>
+                            <select id="rand-status" class="w-full bg-[#151F2E] border border-[#2A3A4E] rounded-lg px-2 py-1 text-xs text-white focus:border-[#3DB4F2] outline-none">
+                                <option value="">Неважно</option>
+                                <option value="FINISHED">Завершён</option>
+                                <option value="RELEASING">Онгоинг</option>
+                            </select>
                         </div>
 
                         <div class="space-y-1">
@@ -154,47 +190,9 @@
         AniRate • Рандомайзер
     </footer>
 
-    <!-- Saved Ratings Drawer -->
-    <div id="saved-drawer" class="fixed inset-0 bg-[#0B1622]/80 backdrop-blur-sm z-50 flex justify-end hidden">
-        <div class="bg-[#151F2E] max-w-sm w-full h-full shadow-2xl flex flex-col border-l border-[#2A3A4E]">
-            <div class="p-3.5 border-b border-[#2A3A4E] flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[#3DB4F2] text-lg">collections_bookmark</span>
-                    <div>
-                        <h3 class="font-rubik-black text-xs text-white">Сохраненные</h3>
-                        <p class="text-[10px] text-[#9FADBD]" id="drawer-subtitle">0 элементов</p>
-                    </div>
-                </div>
-                <button onclick="toggleSavedDrawer()" class="w-7 h-7 rounded-lg hover:bg-[#1E2C3D] flex items-center justify-center text-[#9FADBD] transition">
-                    <span class="material-symbols-outlined text-base">close</span>
-                </button>
-            </div>
-            <div class="p-2 border-b border-[#2A3A4E] flex gap-1 bg-[#0B1622]/40">
-                <button id="drawer-tab-anime" onclick="switchDrawerTab('ANIME')" class="flex-1 py-1 rounded-lg text-xs font-bold bg-[#3DB4F2] text-[#0B1622] transition">Аниме</button>
-                <button id="drawer-tab-manga" onclick="switchDrawerTab('MANGA')" class="flex-1 py-1 rounded-lg text-xs font-bold text-[#9FADBD] hover:text-white transition">Манга</button>
-            </div>
-            <div id="saved-list-container" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
-            <div class="p-3 border-t border-[#2A3A4E] bg-[#0B1622] flex justify-between items-center gap-2">
-                <button onclick="exportRatingsJson()" class="px-3 py-2 rounded-xl bg-[#1E2C3D] hover:bg-[#2A3A4E] text-[#3DB4F2] text-xs font-bold transition flex items-center gap-1 border border-[#2A3A4E]">
-                    <span class="material-symbols-outlined text-sm">download</span> JSON
-                </button>
-                <button onclick="clearAllRatings()" class="px-3 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">delete_sweep</span> Очистить
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#151F2E] text-[#3DB4F2] px-4 py-2.5 rounded-xl shadow-2xl border border-[#3DB4F2]/30 text-xs font-bold transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-sm">info</span>
-        <span id="toast-text">Уведомление</span>
-    </div>
-
     <script src="../script.js"></script>
     <script>
-        window.onload = function() {
-            initCommon();
-        };
+        window.onload = function() { initCommon(); };
     </script>
 </body>
 </html>
