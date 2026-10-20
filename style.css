@@ -50,9 +50,21 @@ body {
     will-change: transform;
 }
 
-/* Стилизация обложки манги под книжку с анимацией приоткрывания */
+/* Реалистичная книжная обложка манги с выглядывающими страницами */
 .manga-book-container {
-    perspective: 1000px;
+    perspective: 1200px;
+    position: relative;
+}
+/* Выглядывающие страницы под обложкой */
+.manga-book-container::after {
+    content: '';
+    position: absolute;
+    top: 4px; right: -5px; bottom: 4px; width: 12px;
+    background: linear-gradient(to right, #dcdfe4, #f5f7fa);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    z-index: 1;
+    transition: transform 0.35s ease;
 }
 .manga-book-cover {
     position: relative;
@@ -60,21 +72,25 @@ body {
     transform-style: preserve-3d;
     transform-origin: left center;
     transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.35s ease;
-    box-shadow: -6px 4px 12px rgba(0,0,0,0.6), inset 2px 0 5px rgba(255,255,255,0.15);
+    box-shadow: -6px 4px 12px rgba(0,0,0,0.6);
     border-radius: 2px 8px 8px 2px;
+    z-index: 2;
 }
 .manga-book-cover::before {
     content: '';
     position: absolute;
     top: 0; left: 0; bottom: 0; width: 10px;
-    background: linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.5) 100%);
+    background: linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.6) 100%);
     z-index: 10;
     border-top-left-radius: 2px;
     border-bottom-left-radius: 2px;
 }
 .manga-book-container:hover .manga-book-cover {
-    transform: rotateY(-14deg) scale(1.03) translateZ(5px);
-    box-shadow: -12px 8px 20px rgba(0,0,0,0.8), inset 4px 0 8px rgba(255,255,255,0.2);
+    transform: rotateY(-16deg) scale(1.02);
+    box-shadow: -14px 8px 22px rgba(0,0,0,0.8);
+}
+.manga-book-container:hover::after {
+    transform: rotateY(-8deg) translateX(-2px);
 }
 
 .nsfw-mask { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: opacity 0.25s ease; }
