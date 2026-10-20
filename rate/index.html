@@ -100,7 +100,7 @@
                         </div>
                         <div id="anime-genres" class="flex flex-wrap justify-center md:justify-start gap-1 pt-0.5"></div>
                         
-                        <!-- Возвращенный блок «Связанное» -->
+                        <!-- Блок «Связанное» -->
                         <div class="pt-2 border-t border-[#2A3A4E]/50 w-full">
                             <div class="flex items-center justify-between text-[#9FADBD] mb-1.5">
                                 <span class="text-[10px] font-bold tracking-wider">Связанное</span>
@@ -120,41 +120,51 @@
                             <h4 class="text-[10px] font-bold tracking-wider">Критерии качества</h4>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
+                            <!-- Содержание -->
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка сюжета, повествования и/или темпа">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">auto_stories</span>Содержание</span>
                                     <span id="val-content" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-content" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                                <p class="text-[9px] text-[#9FADBD] italic">Оценка сюжета, повествования и/или темпа</p>
                             </div>
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
+                            <!-- Персонажи -->
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка проработки, развития и/или химии">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">group</span>Персонажи</span>
                                     <span id="val-characters" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-characters" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                                <p class="text-[9px] text-[#9FADBD] italic">Оценка проработки, развития и/или химии</p>
                             </div>
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
+                            <!-- Визуал -->
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка рисовки, анимации и/или стиля">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">palette</span>Визуал</span>
                                     <span id="val-visuals" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-visuals" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                                <p class="text-[9px] text-[#9FADBD] italic">Оценка рисовки, анимации и/или стиля</p>
                             </div>
-                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
+                            <!-- Звучок -->
+                            <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Оценка музыкального сопровождения и OST (по желанию и озвучки)">
                                 <div class="flex justify-between items-center text-xs font-bold">
                                     <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">music_note</span>Звучок</span>
                                     <span id="val-audio" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                                 </div>
                                 <input type="range" id="slider-audio" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                                <p class="text-[9px] text-[#9FADBD] italic">Оценка музыки и OST (по желанию и озвучки)</p>
                             </div>
                         </div>
-                        <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1">
+                        <!-- Послевкусие -->
+                        <div class="bg-[#0B1622]/50 p-2.5 rounded-xl border border-[#2A3A4E] space-y-1 hover:border-[#3DB4F2] transition group relative" title="Насколько зацепило, вызвало ли эмоции и/или хочется ли вернуться?">
                             <div class="flex justify-between items-center text-xs font-bold">
                                 <span class="text-[#EDF1F5] flex items-center gap-1"><span class="material-symbols-outlined text-xs text-[#3DB4F2]">psychology</span>Послевкусие</span>
                                 <span id="val-aftertaste" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
                             </div>
                             <input type="range" id="slider-aftertaste" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
+                            <p class="text-[9px] text-[#9FADBD] italic">Насколько зацепило, эмоции и/или хочется ли вернуться?</p>
                         </div>
                     </div>
 
