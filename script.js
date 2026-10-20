@@ -8,17 +8,15 @@ let currentWheelRotation = 0;
 let randomMediaType = 'ANIME';
 let currentDrawerTab = 'ANIME';
 
-// Данные авторизованного пользователя AniList
 let anilistUser = null;
-let userMediaList = {}; // карта mediaId -> оценка с AniList
+let userMediaList = {};
 
-const ANILIST_CLIENT_ID = 'YOUR_ANILIST_CLIENT_ID'; // Замените на ваш Client ID из настроек AniList Developer
+const ANILIST_CLIENT_ID = 'YOUR_ANILIST_CLIENT_ID'; // Замените на ваш Client ID
 
 function initCommon() {
     updateSavedCount();
     checkAuthAndInitUser();
     
-    // Закрытие меню при клике вне
     window.addEventListener('click', (e) => {
         const menu = document.getElementById('overflow-menu');
         if (menu && !menu.contains(e.target) && !e.target.closest('button[onclick*="toggleOverflowMenu"]')) {
@@ -33,24 +31,24 @@ function initCommon() {
             const query = e.target.value.trim();
             clearTimeout(searchTimeout);
             if (query.length < 2) {
-                document.getElementById('search-results').innerHTML = '<div class="p-6 text-center text-xs text-[#9FADBD]">Начните вводить название...</div>';
-                document.getElementById('search-loading').classList.add('hidden');
+                const res = document.getElementById('search-results');
+                if (res) res.innerHTML = '<div class="p-6 text-center text-xs text-[#9FADBD]">Начните вводить название...</div>';
+                const load = document.getElementById('search-loading');
+                if (load) load.classList.add('hidden');
                 return;
             }
-            document.getElementById('search-loading').classList.remove('hidden');
+            const load = document.getElementById('search-loading');
+            if (load) load.classList.remove('hidden');
             searchTimeout = setTimeout(() => { searchAllMedia(query); }, 350);
         });
     }
 }
 
-// OAuth AniList
 function loginAniList() {
-    const redirectUri = window.location.origin + window.location.pathname;
     window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&response_type=token`;
 }
 
 async function checkAuthAndInitUser() {
-    // Проверка токена в хэше URL после OAuth редиректа
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const token = params.get('access_token');
@@ -71,11 +69,6 @@ async function checkAuthAndInitUser() {
             statistics {
               anime { count episodesWatched meanScore minutesWatched }
               manga { count chaptersRead volumesRead meanScore }
-            }
-            favourites {
-              anime { nodes { id title { romaji english } coverImage { large } } }
-              manga { nodes { id title { romaji english } coverImage { large } } }
-              characters { nodes { id name { full } image { large } } }
             }
             genres(sort: COUNT_DESC) { genre }
           }
@@ -145,7 +138,6 @@ function renderUserWidget(user) {
     `;
 }
 
-// Меню переполнения (Тема и Язык)
 function toggleOverflowMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('overflow-menu');
@@ -162,16 +154,13 @@ function toggleLanguage() {
     showToast('Переключение языков (RU/EN)');
 }
 
-// Окно профиля
 async function openProfileModal(username) {
     const modal = document.getElementById('profile-modal');
     if (modal) modal.classList.remove('hidden');
-    if (username) {
-        await loadUserProfileData(username);
-    }
+    if (username) await loadUserProfileData(username);
 }
 
-async function closeProfileModal() {
+function closeProfileModal() {
     const modal = document.getElementById('profile-modal');
     if (modal) modal.classList.add('hidden');
 }
@@ -189,16 +178,11 @@ async function loadUserProfileData(username) {
     const query = `
     query ($search: String) {
       User(name: $search) {
-        name about avatar { large } bannerImage
+        name about avatar { large }
         options { scoringSystem }
         statistics {
-          anime { count episodesWatched meanScore minutesWatched statuses { status count } }
-          manga { count chaptersRead volumesRead meanScore statuses { status count } }
-        }
-        favourites {
-          anime { nodes { id title { romaji } coverImage { large } } }
-          manga { nodes { id title { romaji } coverImage { large } } }
-          characters { nodes { id name { full } image { large } } }
+          anime { count episodesWatched meanScore }
+          manga { count chaptersRead meanScore }
         }
         genres(sort: COUNT_DESC) { genre }
       }
@@ -224,8 +208,6 @@ async function loadUserProfileData(username) {
 function renderUserProfile(user) {
     const content = document.getElementById('profile-modal-content');
     if (!content) return;
-
-    // Подсчет оценок AniRate vs AniList для текущего юзера
     let anirateCount = savedRatings.length;
     let anilistCount = Object.keys(userMediaList).length;
 
@@ -242,63 +224,45 @@ function renderUserProfile(user) {
                 <p class="text-[11px] text-[#9FADBD] mt-1 line-clamp-2">${user.about ? user.about.replace(/<[^>]*>?/gm, '') : 'Нет описания'}</p>
             </div>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
             <div class="bg-[#0B1622]/60 p-3 rounded-xl border border-[#2A3A4E]">
-                <h4 class="font-bold text-[#3DB4F2] mb-1">Аниме статистика</h4>
+                <h4 class="font-bold text-[#3DB4F2] mb-1">Аниме</h4>
                 <p>Всего: ${user.statistics.anime.count}</p>
                 <p>Эпизодов: ${user.statistics.anime.episodesWatched}</p>
-                <p>Средний балл: ${user.statistics.anime.meanScore}%</p>
             </div>
             <div class="bg-[#0B1622]/60 p-3 rounded-xl border border-[#2A3A4E]">
-                <h4 class="font-bold text-[#3DB4F2] mb-1">Манга статистика</h4>
+                <h4 class="font-bold text-[#3DB4F2] mb-1">Манга</h4>
                 <p>Всего: ${user.statistics.manga.count}</p>
                 <p>Глав: ${user.statistics.manga.chaptersRead}</p>
-                <p>Средний балл: ${user.statistics.manga.meanScore}%</p>
             </div>
         </div>
-
         <div class="bg-[#0B1622]/60 p-3 rounded-xl border border-[#2A3A4E] flex justify-around text-center">
             <div>
                 <div class="font-rubik-black text-sm text-[#3DB4F2]">${anirateCount}</div>
-                <div class="text-[10px] text-[#9FADBD]">Оценено в AniRate</div>
+                <div class="text-[10px] text-[#9FADBD]">В AniRate</div>
             </div>
             <div class="border-l border-[#2A3A4E]"></div>
             <div>
                 <div class="font-rubik-black text-sm text-[#3DB4F2]">${anilistCount}</div>
-                <div class="text-[10px] text-[#9FADBD]">Оценено в AniList</div>
-            </div>
-        </div>
-
-        <div class="space-y-1">
-            <h4 class="font-bold text-white">Любимые жанры</h4>
-            <div class="flex flex-wrap gap-1">
-                ${user.genres.slice(0, 6).map(g => `<span class="px-2 py-0.5 rounded bg-[#1E2C3D] text-[#3DB4F2] text-[10px]">${g.genre}</span>`).join('')}
+                <div class="text-[10px] text-[#9FADBD]">В AniList</div>
             </div>
         </div>
     `;
 }
 
-// Логика конвертации оценки AniRate под Scoring System пользователя AniList
 function formatScoreBySystem(score90, scoringSystem) {
     const ratio = score90 / 90;
-    if (!scoringSystem || scoringSystem === 'POINT_100') {
-        return Math.round(ratio * 100) + ' / 100';
-    } else if (scoringSystem === 'POINT_10_DECIMAL') {
-        return (ratio * 10).toFixed(1) + ' / 10';
-    } else if (scoringSystem === 'POINT_10') {
-        return Math.round(ratio * 10) + ' / 10';
-    } else if (scoringSystem === 'POINT_5') {
-        return Math.round(ratio * 5) + ' / 5 ★';
-    } else if (scoringSystem === 'POINT_3') {
-        const val = Math.round(ratio * 2) + 1; // 1, 2, 3
-        const map = {1: '😞', 2: '😐', 3: '😊'};
-        return map[val] || '😊';
+    if (!scoringSystem || scoringSystem === 'POINT_100') return Math.round(ratio * 100) + ' / 100';
+    if (scoringSystem === 'POINT_10_DECIMAL') return (ratio * 10).toFixed(1) + ' / 10';
+    if (scoringSystem === 'POINT_10') return Math.round(ratio * 10) + ' / 10';
+    if (scoringSystem === 'POINT_5') return Math.round(ratio * 5) + ' / 5 ★';
+    if (scoringSystem === 'POINT_3') {
+        const val = Math.round(ratio * 2) + 1;
+        return {1: '😞', 2: '😐', 3: '😊'}[val] || '😊';
     }
     return score90 + ' / 90';
 }
 
-// Отображение критериев для Аниме и Манги (справа от Текст для манги)
 function renderCriteriaForMediaType(type) {
     const criteriaContainer = document.getElementById('criteria-container');
     const strongChipsContainer = document.getElementById('strong-point-chips');
@@ -312,7 +276,7 @@ function renderCriteriaForMediaType(type) {
             { key: 'content', label: 'Содержание', icon: 'auto_stories', desc: 'Оценка сюжета, повествования и/или темпа' },
             { key: 'characters', label: 'Персонажи', icon: 'group', desc: 'Оценка проработки, развития и/или химии' },
             { key: 'visuals', label: 'Рисовка', icon: 'palette', desc: 'стиль, детализация, читаемость кадров и/или погружение' },
-            { key: 'composition', label: 'Композиция', icon: 'view_kanban', desc: 'Построение страницы, ритм, работа с пространством и/или переходами' },
+            { key: 'composition', label: 'Композиция', icon: 'view_kanban', desc: 'Построение страницы, ритм, работа с пространством' },
             { key: 'audio', label: 'Текст', icon: 'chat', desc: 'диалоги, нарративные вставки' },
             { key: 'aftertaste', label: 'Послевкусие', icon: 'psychology', desc: 'Насколько зацепило, эмоции и/или хочется ли вернуться?' }
         ];
@@ -375,7 +339,7 @@ function renderCriteriaForMediaType(type) {
                 <span id="val-aftertaste" class="font-rubik-black text-[#3DB4F2] text-xs">8</span>
             </div>
             <input type="range" id="slider-aftertaste" min="1" max="10" value="8" step="1" class="w-full accent-[#3DB4F2] bg-[#1E2C3D] h-1.5 rounded-lg cursor-pointer" oninput="updateSliders()">
-            <p class="text-[9px] text-[#9FADBD] italic">Насколько зацепило, вызвало ли эмоции и/или хочется ли вернуться?</p>
+            <p class="text-[9px] text-[#9FADBD] italic">Насколько зацепило, эмоции и/или хочется ли вернуться?</p>
         `;
         criteriaContainer.appendChild(afterDiv);
 
@@ -410,13 +374,12 @@ function updateSliders() {
     if (document.getElementById('val-audio')) document.getElementById('val-audio').innerText = extra;
     if (document.getElementById('val-aftertaste')) document.getElementById('val-aftertaste').innerText = af;
 
-    const sum = c + ch + v + extra + (currentAnime.type === 'MANGA' ? (parseInt(document.getElementById('slider-aftertaste')?.value || 8)) : af);
+    const sum = c + ch + v + extra + af;
     const score90 = Math.round((sum / 50) * 90);
     
     const scoreEl = document.getElementById('score-90-value');
     if (scoreEl) scoreEl.innerText = score90;
 
-    // Конвертация под систему AniList пользователя
     const convertedEl = document.getElementById('anilist-converted-score');
     if (convertedEl) {
         const scoringSys = anilistUser && anilistUser.options ? anilistUser.options.scoringSystem : 'POINT_100';
@@ -632,7 +595,6 @@ function renderSavedList() {
         const div = document.createElement('div');
         div.className = 'flex items-center gap-2.5 p-2 bg-[#0B1622]/60 rounded-xl border border-[#2A3A4E]';
         
-        // Проверяем, есть ли оценка тайтла на AniList
         let scoreDisplay = `<span class="font-rubik-black text-xs text-[#3DB4F2]">${item.score90} / 90</span>`;
         if (userMediaList[item.id]) {
             const sys = anilistUser && anilistUser.options ? anilistUser.options.scoringSystem : 'POINT_100';
