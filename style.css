@@ -24,9 +24,6 @@ body.light-theme .bg-\[\#1E2C3D\] {
     border-color: #E5E7EB !important;
     color: #374151 !important;
 }
-body.light-theme text-white {
-    color: #111827 !important;
-}
 .font-rubik-black {
     font-family: 'Rubik', sans-serif;
     font-weight: 900;
